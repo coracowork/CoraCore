@@ -1,0 +1,29 @@
+[package]
+name = "cora-cowork-assistant"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+cora-cowork-common = { workspace = true }
+cora-cowork-api-types = { workspace = true }
+cora-cowork-db = { workspace = true }
+cora-cowork-auth = { workspace = true }
+cora-cowork-extension = { workspace = true }
+axum = { workspace = true }
+dirs = { workspace = true }
+include_dir = "0.7"
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+thiserror = { workspace = true }
+async-trait = { workspace = true }
+chrono = { workspace = true }
+uuid = { workspace = true }
+
+[dev-dependencies]
+cora-cowork-realtime = { workspace = true }
+tempfile = { workspace = true }
+tower = { workspace = true, features = ["util"] }
+http-body-util = { workspace = true }

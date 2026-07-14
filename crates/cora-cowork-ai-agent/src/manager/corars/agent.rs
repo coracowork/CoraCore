@@ -1,0 +1,848 @@
+﻿use std::collections::HashMap;
+use std::path::PathBuf;
+use std::sync::Arc;
+use std::time::Duration;
+
+use cora_agent::bootstrap::AgentBootstrap;
+use cora_agent::engine::AgentEngine;
+use cora_agent::output::OutputSink;
+use cora_agent::session::Session;
+use cora_config::config::{CliArgs, Config};
+use cora_mcp::manager::McpManager;
+use cora_protocol::commands::SessionMode;
+use cora_protocol::{ToolApprovalManager, ToolApprovalResult};
+use cora_cowork_api_types::{
+    AcpConfigOptionDto, AcpConfigSelectOptionDto, AgentModeResponse, ConfigOptionConfirmation,
+    GetConfigOptionsResponse, SetConfigOptionResponse, SlashCommandItem,
+};
+use cora_cowork_common::{AgentKillReason, AgentType, Confirmation, ConversationStatus, ErrorChain, TimestampMs, now_ms};
+use serde_json::Value;
+use tokio::sync::{Mutex, Notify, broadcast};
+use tracing::{debug, error, info, warn};
+
+use crate::agent_runtime::AgentRuntime;
+use crate::capability::backend_output_sink::BackendOutputSink;
+use crate::capability::backend_protocol_sink::BackendProtocolSink;
+use crate::error::AgentError;
+use crate::protocol::events::AgentStreamEvent;
+use crate::protocol::send_error::AgentSendError;
+use crate::types::{CorarsResolvedConfig, SendMessageData};
+
+use super::error::corars_engine_error_to_send_error;
+
+#[derive(Clone, Debug)]
+struct CorarsFinalInputDumpContext {
+    dump_dir: PathBuf,
+    provider: String,
+    model: String,
+    base_url: Option<String>,
+    system_prompt: Option<String>,
+    session_mode: Option<String>,
+    skills: Vec<String>,
+    mcp_servers: HashMap<String, cora_config::config::McpServerConfig>,
+    runtime_env: Vec<(String, String)>,
+}
+
+fn build_corars_final_input_dump_value(
+    conversation_id: &str,
+    workspace: &str,
+    context: &CorarsFinalInputDumpContext,
+    data: &SendMessageData,
+) -> Value {
+    serde_json::json!({
+        "kind": "corars-final-input",
+        "backend": "corars",
+        "conversation_id": conversation_id,
+        "session_id": "none",
+        "msg_id": data.msg_id,
+        "turn_id": data.turn_id.as_deref().unwrap_or("none"),
+        "input": {
+            "system_prompt": context.system_prompt.as_deref(),
+            "user_content": &data.content,
+        },
+        "resolved_context": {
+            "provider": &context.provider,
+            "model": &context.model,
+            "base_url": context.base_url.as_deref(),
+            "workspace": {
+                "path": workspace,
+            },
+            "session_mode": context.session_mode.as_deref(),
+            "skills": &context.skills,
+            "mcp_servers": serde_json::to_value(&context.mcp_servers).unwrap_or(Value::Null),
+            "runtime_env": &context.runtime_env,
+        },
+    })
+}
+
+pub struct CorarsAgentManager {
+    runtime: AgentRuntime,
+    engine: Mutex<AgentEngine>,
+    /// Static slash command metadata captured at bootstrap so UI lookups do
+    /// not wait behind an active `engine.run()` turn.
+    slash_commands: Vec<SlashCommandItem>,
+    /// Holds `Arc<McpManager>` instances alive for the duration of this agent's
+    /// lifetime. The managers are not accessed after construction — they exist
+    /// solely so their underlying MCP connections outlive the engine's event
+    /// loop. Rust drops them here, in field-declaration order, after `engine`
+    /// and `runtime` are dropped. See the explicit `Drop` impl below.
+    #[allow(dead_code)] // intentional: lifetime-extension only; see Drop impl
+    mcp_managers: Vec<Arc<McpManager>>,
+    approval_manager: Arc<ToolApprovalManager>,
+    confirmations: Arc<std::sync::RwLock<Vec<Confirmation>>>,
+    final_input_dump: Option<CorarsFinalInputDumpContext>,
+    /// Signalled by `cancel()` to abort an in-flight `engine.run()` via
+    /// `tokio::select!` in `send_message()`.
+    cancel_notify: Arc<Notify>,
+    /// Signalled after an in-flight turn emits its terminal event.
+    turn_finished_notify: Arc<Notify>,
+}
+
+impl Drop for CorarsAgentManager {
+    fn drop(&mut self) {
+        // McpManagers are held alive by the `mcp_managers` field specifically
+        // so they outlive the agent's event loop. No explicit cleanup is needed
+        // here — the Arc drop path releases each McpManager's underlying MCP
+        // connection. This impl exists to document the intentional Drop-order
+        // semantics rather than as a lint escape hatch.
+    }
+}
+
+impl CorarsAgentManager {
+    pub async fn new(
+        conversation_id: String,
+        workspace: String,
+        config_extra: CorarsResolvedConfig,
+        resume_session: Option<Session>,
+    ) -> Result<Self, AgentError> {
+        let runtime = AgentRuntime::new(conversation_id.clone(), workspace.clone(), 128);
+        let sink: Arc<dyn OutputSink> = Arc::new(BackendOutputSink::new(runtime.event_sender()));
+        let runtime_env = config_extra.runtime_env.clone();
+        let final_input_dump = config_extra
+            .prompt_dump_dir
+            .clone()
+            .map(|dump_dir| CorarsFinalInputDumpContext {
+                dump_dir,
+                provider: config_extra.provider.clone(),
+                model: config_extra.model.clone(),
+                base_url: config_extra.base_url.clone(),
+                system_prompt: config_extra.system_prompt.clone(),
+                session_mode: config_extra.session_mode.clone(),
+                skills: config_extra.skills.clone(),
+                mcp_servers: config_extra.extra_mcp_servers.clone(),
+                runtime_env: config_extra.runtime_env.clone(),
+            });
+
+        let cli_args = CliArgs {
+            provider: Some(config_extra.provider.clone()),
+            api_key: Some(config_extra.api_key.clone()),
+            base_url: config_extra.base_url.clone(),
+            model: Some(config_extra.model.clone()),
+            max_tokens: config_extra.max_tokens,
+            max_turns: config_extra.max_turns,
+            max_tool_call_malformed_turns: config_extra.max_tool_call_malformed_turns,
+            max_tool_call_failure_turns: config_extra.max_tool_call_failure_turns,
+            system_prompt: config_extra.system_prompt.clone(),
+            profile: None,
+            auto_approve: config_extra.session_mode.as_deref() == Some("yolo"),
+            thinking: None,
+            thinking_budget: None,
+            project_dir: Some(PathBuf::from(&workspace)),
+        };
+
+        let mut config =
+            Config::resolve(&cli_args).map_err(|e| AgentError::internal(format!("Config resolve failed: {e}")))?;
+
+        // Backend-specific overrides
+        config.bedrock = config_extra.bedrock_config;
+        config.session.enabled = true;
+        config.session.directory = config_extra.session_directory.to_string_lossy().into_owned();
+
+        if let Some(field) = config_extra.compat_overrides.max_tokens_field {
+            config.compat.transport.max_tokens_field = Some(field);
+        }
+        if let Some(path) = config_extra.compat_overrides.api_path {
+            config.compat.transport.api_path = Some(path);
+        }
+
+        if !config_extra.extra_mcp_servers.is_empty() {
+            config.mcp.servers.extend(config_extra.extra_mcp_servers.clone());
+        }
+
+        let is_resume = resume_session.is_some();
+        let provider_label = config.provider_label.clone();
+
+        let mut bootstrap = AgentBootstrap::new(config, &workspace, sink).runtime_env(runtime_env);
+        if let Some(session) = resume_session {
+            info!(
+                conversation_id = %conversation_id,
+                session_id = %session.id,
+                message_count = session.messages.len(),
+                "Resuming corars session"
+            );
+            bootstrap = bootstrap.resume(session);
+        }
+
+        let result = bootstrap
+            .build()
+            .await
+            .map_err(|e| AgentError::internal(format!("Agent bootstrap failed: {e}")))?;
+
+        let mut engine = result.engine;
+        if !is_resume && let Err(e) = engine.init_session(&provider_label, &workspace, Some(&conversation_id)) {
+            error!(
+                conversation_id = %conversation_id,
+                error = %ErrorChain(&*e),
+                "Failed to init session, continuing without persistence"
+            );
+        }
+
+        let approval_manager = Arc::new(ToolApprovalManager::new());
+
+        if let Some(mode_str) = &config_extra.session_mode {
+            let mode = parse_session_mode(mode_str);
+            approval_manager.set_mode(mode);
+            info!(
+                conversation_id = %conversation_id,
+                session_mode = mode_str,
+                "Corars initial session mode applied"
+            );
+        }
+
+        let confirmations = Arc::new(std::sync::RwLock::new(Vec::new()));
+        let protocol_sink = BackendProtocolSink::new(runtime.event_sender(), confirmations.clone());
+        engine.set_approval_manager(approval_manager.clone());
+        engine.set_protocol_writer(Arc::new(protocol_sink));
+        let slash_commands = engine
+            .slash_command_list()
+            .into_iter()
+            .map(|(command, description)| SlashCommandItem {
+                command,
+                description,
+                completion_behavior: None,
+                empty_turn_tip_code: None,
+                empty_turn_tip_params: None,
+            })
+            .collect();
+
+        runtime.transition_to(ConversationStatus::Pending);
+
+        Ok(Self {
+            runtime,
+            engine: Mutex::new(engine),
+            slash_commands,
+            mcp_managers: result.mcp_managers,
+            approval_manager,
+            confirmations,
+            final_input_dump,
+            cancel_notify: Arc::new(Notify::new()),
+            turn_finished_notify: Arc::new(Notify::new()),
+        })
+    }
+
+    fn request_stop(&self, reason: Option<AgentKillReason>, operation: &'static str) -> bool {
+        let was_running = self.runtime.status() == Some(ConversationStatus::Running);
+
+        if let Ok(mut confs) = self.confirmations.write() {
+            confs.clear();
+        }
+
+        if was_running {
+            self.cancel_notify.notify_waiters();
+        }
+
+        info!(
+            conversation_id = %self.runtime.conversation_id(),
+            ?reason,
+            was_running,
+            operation,
+            "Corars stop signal requested"
+        );
+
+        was_running
+    }
+
+    fn dump_corars_final_input(&self, data: &SendMessageData) {
+        let Some(context) = self.final_input_dump.as_ref() else {
+            return;
+        };
+
+        let value = build_corars_final_input_dump_value(
+            self.runtime.conversation_id(),
+            self.runtime.workspace(),
+            context,
+            data,
+        );
+        let input = value.get("input").cloned().unwrap_or(Value::Null);
+        let resolved_context = value.get("resolved_context").cloned().unwrap_or(Value::Null);
+
+        match crate::dev_prompt_dump::dump_agent_final_input(
+            &context.dump_dir,
+            crate::dev_prompt_dump::AgentFinalInputDump {
+                kind: "corars-final-input",
+                backend: "corars",
+                conversation_id: self.runtime.conversation_id(),
+                session_id: None,
+                msg_id: Some(data.msg_id.as_str()),
+                turn_id: data.turn_id.as_deref(),
+                input,
+                resolved_context,
+            },
+        ) {
+            Ok(path) => {
+                debug!(
+                    conversation_id = %self.runtime.conversation_id(),
+                    msg_id = %data.msg_id,
+                    path = %path.display(),
+                    "DEV agent final input dump written"
+                );
+            }
+            Err(error) => {
+                warn!(
+                    conversation_id = %self.runtime.conversation_id(),
+                    msg_id = %data.msg_id,
+                    error = %error,
+                    "DEV agent final input dump failed"
+                );
+            }
+        }
+    }
+}
+
+#[async_trait::async_trait]
+impl crate::agent_task::IAgentTask for CorarsAgentManager {
+    fn agent_type(&self) -> AgentType {
+        AgentType::Corars
+    }
+
+    fn conversation_id(&self) -> &str {
+        self.runtime.conversation_id()
+    }
+
+    fn workspace(&self) -> &str {
+        self.runtime.workspace()
+    }
+
+    fn status(&self) -> Option<ConversationStatus> {
+        self.runtime.status()
+    }
+
+    fn last_activity_at(&self) -> TimestampMs {
+        self.runtime.last_activity_at()
+    }
+
+    fn subscribe(&self) -> broadcast::Receiver<AgentStreamEvent> {
+        self.runtime.subscribe()
+    }
+
+    async fn send_message(&self, data: SendMessageData) -> Result<(), AgentSendError> {
+        let started_at = now_ms();
+        info!(
+            conversation_id = %self.runtime.conversation_id(),
+            msg_id = %data.msg_id,
+            turn_id = data.turn_id.as_deref().unwrap_or("none"),
+            "Corars send_message started"
+        );
+        self.runtime.bump_activity();
+        self.runtime.reset_for_new_turn(ConversationStatus::Running);
+        self.dump_corars_final_input(&data);
+
+        let mut engine = self.engine.lock().await;
+
+        let result = tokio::select! {
+            res = engine.run(&data.content, &data.msg_id) => Some(res),
+            _ = self.cancel_notify.notified() => {
+                info!(
+                    conversation_id = %self.runtime.conversation_id(),
+                    "Corars engine.run() cancelled by stop signal"
+                );
+                engine.abort_current_turn("Tool execution canceled by user");
+                None
+            }
+        };
+
+        let elapsed_ms = now_ms() - started_at;
+        self.runtime.bump_activity();
+
+        let send_result = match result {
+            Some(Ok(_)) => {
+                info!(
+                    conversation_id = %self.runtime.conversation_id(),
+                    elapsed_ms,
+                    "Corars engine.run() completed, emitting Finish"
+                );
+                self.runtime.emit_finish(None);
+                Ok(())
+            }
+            Some(Err(e)) => {
+                error!(
+                    conversation_id = %self.runtime.conversation_id(),
+                    elapsed_ms,
+                    error = %ErrorChain(&e),
+                    "Corars engine.run() failed, emitting Error"
+                );
+                let send_error = corars_engine_error_to_send_error(&e);
+                self.runtime.emit_error_data(send_error.stream_error().clone());
+                Err(send_error)
+            }
+            None => {
+                self.runtime.emit_finish(None);
+                Ok(())
+            }
+        };
+        self.turn_finished_notify.notify_waiters();
+        send_result
+    }
+
+    async fn cancel(&self) -> Result<(), AgentError> {
+        self.request_stop(None, "cancel");
+        Ok(())
+    }
+
+    fn kill(&self, reason: Option<AgentKillReason>) -> Result<(), AgentError> {
+        self.request_stop(reason, "kill");
+        Ok(())
+    }
+}
+
+impl CorarsAgentManager {
+    pub fn kill_and_wait(
+        &self,
+        reason: Option<AgentKillReason>,
+    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send>> {
+        let was_running = self.request_stop(reason, "kill");
+        let turn_finished_notify = Arc::clone(&self.turn_finished_notify);
+        let runtime = self.runtime.clone();
+        let conversation_id = self.runtime.conversation_id().to_owned();
+
+        Box::pin(async move {
+            if was_running
+                && tokio::time::timeout(Duration::from_secs(5), async {
+                    while runtime.status() == Some(ConversationStatus::Running) {
+                        turn_finished_notify.notified().await;
+                    }
+                })
+                .await
+                .is_err()
+            {
+                warn!(
+                    conversation_id,
+                    "Timed out waiting for corars turn to finish after kill"
+                );
+            }
+        })
+    }
+}
+
+/// Corars-specific operations reached through `AgentInstance::Corars(..)`
+/// matches in the routes + services.
+impl CorarsAgentManager {
+    pub fn confirm(&self, _msg_id: &str, call_id: &str, data: Value, always_allow: bool) -> Result<(), AgentError> {
+        if let Ok(mut confs) = self.confirmations.write() {
+            confs.retain(|c| c.call_id != call_id);
+        }
+
+        let value = data.get("value").and_then(|v| v.as_str()).unwrap_or("cancel");
+
+        let is_cancel = value == "cancel";
+
+        debug!(
+            conversation_id = %self.runtime.conversation_id(),
+            call_id,
+            value,
+            always_allow,
+            "Corars confirm"
+        );
+
+        if is_cancel {
+            self.approval_manager.resolve(
+                call_id,
+                ToolApprovalResult::Denied {
+                    reason: "User denied the tool request".into(),
+                },
+            );
+        } else {
+            let scope = if always_allow {
+                cora_protocol::commands::ApprovalScope::Always
+            } else {
+                cora_protocol::commands::ApprovalScope::Once
+            };
+            self.approval_manager.approve(call_id, scope);
+        }
+        Ok(())
+    }
+
+    pub fn get_confirmations(&self) -> Vec<Confirmation> {
+        self.confirmations.read().map(|c| c.clone()).unwrap_or_default()
+    }
+
+    pub fn check_approval(&self, action: &str, _command_type: Option<&str>) -> bool {
+        self.approval_manager.is_auto_approved(action)
+    }
+
+    pub async fn mode(&self) -> Result<AgentModeResponse, AgentError> {
+        Ok(AgentModeResponse {
+            mode: self.approval_manager.current_mode(),
+            initialized: true,
+        })
+    }
+
+    pub async fn set_mode(&self, mode: &str) -> Result<(), AgentError> {
+        let prev = self.approval_manager.current_mode();
+        self.approval_manager.set_mode(parse_session_mode(mode));
+        info!(
+            conversation_id = %self.runtime.conversation_id(),
+            from = prev,
+            to = mode,
+            "Corars session mode switched"
+        );
+        Ok(())
+    }
+
+    pub async fn config_options(&self) -> Result<GetConfigOptionsResponse, AgentError> {
+        Ok(GetConfigOptionsResponse {
+            config_options: vec![corars_mode_config_option(self.approval_manager.current_mode())],
+        })
+    }
+
+    pub async fn set_config_option(&self, option_id: &str, value: &str) -> Result<SetConfigOptionResponse, AgentError> {
+        let option_id = option_id.trim();
+        let value = value.trim();
+
+        if option_id != CORARS_MODE_OPTION_ID {
+            return Err(AgentError::bad_request(format!(
+                "Config option '{option_id}' is not available"
+            )));
+        }
+        if !is_corars_session_mode(value) {
+            return Err(AgentError::bad_request(format!(
+                "Value '{value}' is not selectable for config option '{option_id}'"
+            )));
+        }
+
+        self.set_mode(value).await?;
+        Ok(SetConfigOptionResponse {
+            confirmation: ConfigOptionConfirmation::Observed,
+            config_options: Some(self.config_options().await?.config_options),
+        })
+    }
+
+    pub async fn get_slash_commands(&self) -> Result<Vec<SlashCommandItem>, AgentError> {
+        Ok(self.slash_commands.clone())
+    }
+}
+
+const CORARS_MODE_OPTION_ID: &str = "mode";
+
+fn is_corars_session_mode(s: &str) -> bool {
+    matches!(s, "default" | "auto_edit" | "yolo")
+}
+
+fn corars_mode_config_option(current_value: String) -> AcpConfigOptionDto {
+    AcpConfigOptionDto {
+        id: CORARS_MODE_OPTION_ID.to_owned(),
+        name: Some("Mode".to_owned()),
+        label: None,
+        description: None,
+        category: Some("mode".to_owned()),
+        option_type: "select".to_owned(),
+        current_value: Some(current_value),
+        options: vec![
+            corars_mode_select_option("default", "Default"),
+            corars_mode_select_option("auto_edit", "Auto Edit"),
+            corars_mode_select_option("yolo", "YOLO"),
+        ],
+    }
+}
+
+fn corars_mode_select_option(value: &str, name: &str) -> AcpConfigSelectOptionDto {
+    AcpConfigSelectOptionDto {
+        value: value.to_owned(),
+        name: Some(name.to_owned()),
+        label: None,
+        description: None,
+    }
+}
+
+fn parse_session_mode(s: &str) -> SessionMode {
+    match s {
+        "auto_edit" => SessionMode::AutoEdit,
+        "yolo" => SessionMode::Yolo,
+        _ => SessionMode::Default,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::agent_task::IAgentTask;
+
+    async fn assert_no_stop_signal(agent: &CorarsAgentManager) {
+        let notified = agent.cancel_notify.notified();
+        tokio::pin!(notified);
+
+        assert!(
+            tokio::time::timeout(std::time::Duration::from_millis(20), &mut notified)
+                .await
+                .is_err(),
+            "idle stop must not leave a stale cancellation signal for the next turn"
+        );
+    }
+
+    fn make_test_config() -> CorarsResolvedConfig {
+        CorarsResolvedConfig {
+            provider: "anthropic".into(),
+            api_key: "sk-test-key".into(),
+            model: "claude-sonnet-4-20250514".into(),
+            base_url: None,
+            system_prompt: None,
+            max_tokens: Some(4096),
+            max_turns: None,
+            max_tool_call_malformed_turns: None,
+            max_tool_call_failure_turns: None,
+            compat_overrides: Default::default(),
+            session_directory: std::env::temp_dir().join("corars-test-sessions"),
+            session_mode: None,
+            skills: Vec::new(),
+            extra_mcp_servers: std::collections::HashMap::new(),
+            bedrock_config: None,
+            runtime_env: Vec::new(),
+            prompt_dump_dir: None,
+        }
+    }
+
+    #[test]
+    fn corars_final_input_dump_value_contains_raw_split_input_and_context() {
+        let mut mcp_env = std::collections::HashMap::new();
+        mcp_env.insert("TOKEN".to_owned(), "raw-token-value".to_owned());
+
+        let mut mcp_servers = std::collections::HashMap::new();
+        mcp_servers.insert(
+            "raw-mcp".to_owned(),
+            cora_config::config::McpServerConfig {
+                transport: cora_config::config::TransportType::Stdio,
+                command: Some("/bin/raw-mcp".to_owned()),
+                args: Some(vec!["--serve".to_owned()]),
+                env: Some(mcp_env),
+                url: None,
+                headers: None,
+                deferred: Some(false),
+                startup_timeout_ms: None,
+            },
+        );
+
+        let context = CorarsFinalInputDumpContext {
+            dump_dir: std::path::PathBuf::from("/tmp/prompt-dumps"),
+            provider: "openai".to_owned(),
+            model: "gpt-test".to_owned(),
+            base_url: Some("https://example.test/v1".to_owned()),
+            system_prompt: Some("assistant rule raw".to_owned()),
+            session_mode: Some("yolo".to_owned()),
+            skills: vec!["cora-cowork-config".to_owned()],
+            mcp_servers,
+            runtime_env: vec![("CORA_COWORK_RAW".to_owned(), "raw-env-value".to_owned())],
+        };
+        let data = SendMessageData {
+            content: "team wake raw content".to_owned(),
+            msg_id: "msg-corars-final".to_owned(),
+            turn_id: Some("turn-corars-final".to_owned()),
+            files: Vec::new(),
+            inject_skills: Vec::new(),
+        };
+
+        let value = build_corars_final_input_dump_value("conv-corars", "/workspace", &context, &data);
+
+        assert_eq!(value["kind"], "corars-final-input");
+        assert_eq!(value["backend"], "corars");
+        assert_eq!(value["conversation_id"], "conv-corars");
+        assert_eq!(value["msg_id"], "msg-corars-final");
+        assert_eq!(value["turn_id"], "turn-corars-final");
+        assert_eq!(value["input"]["system_prompt"], "assistant rule raw");
+        assert_eq!(value["input"]["user_content"], "team wake raw content");
+        assert_eq!(value["resolved_context"]["provider"], "openai");
+        assert_eq!(value["resolved_context"]["model"], "gpt-test");
+        assert_eq!(value["resolved_context"]["workspace"]["path"], "/workspace");
+        assert_eq!(value["resolved_context"]["skills"][0], "cora-cowork-config");
+        assert_eq!(
+            value["resolved_context"]["mcp_servers"]["raw-mcp"]["env"]["TOKEN"],
+            "raw-token-value"
+        );
+        assert_eq!(value["resolved_context"]["runtime_env"][0][1], "raw-env-value");
+    }
+
+    #[tokio::test]
+    async fn corars_agent_returns_correct_type() {
+        let agent = CorarsAgentManager::new("conv-1".into(), "/project".into(), make_test_config(), None)
+            .await
+            .unwrap();
+        assert_eq!(agent.agent_type(), AgentType::Corars);
+        assert_eq!(agent.workspace(), "/project");
+        assert_eq!(agent.conversation_id(), "conv-1");
+    }
+
+    #[tokio::test]
+    async fn corars_agent_initial_status_is_pending() {
+        let agent = CorarsAgentManager::new("conv-1".into(), "/project".into(), make_test_config(), None)
+            .await
+            .unwrap();
+        assert_eq!(agent.status(), Some(ConversationStatus::Pending));
+    }
+
+    #[tokio::test]
+    async fn corars_agent_subscribe_returns_receiver() {
+        let agent = CorarsAgentManager::new("conv-1".into(), "/project".into(), make_test_config(), None)
+            .await
+            .unwrap();
+        let _rx = agent.subscribe();
+    }
+
+    #[tokio::test]
+    async fn corars_agent_kill_succeeds() {
+        let agent = CorarsAgentManager::new("conv-1".into(), "/project".into(), make_test_config(), None)
+            .await
+            .unwrap();
+        assert!(agent.kill(None).is_ok());
+        // Idle kill only clears transient state; task-manager removal owns lifecycle cleanup.
+        assert_eq!(agent.status(), Some(ConversationStatus::Pending));
+    }
+
+    #[tokio::test]
+    async fn corars_agent_kill_with_reason_succeeds() {
+        let agent = CorarsAgentManager::new("conv-1".into(), "/project".into(), make_test_config(), None)
+            .await
+            .unwrap();
+        assert!(agent.kill(Some(AgentKillReason::IdleTimeout)).is_ok());
+    }
+
+    #[tokio::test]
+    async fn corars_agent_kill_running_turn_sends_stop_signal() {
+        let agent = CorarsAgentManager::new("conv-1".into(), "/project".into(), make_test_config(), None)
+            .await
+            .unwrap();
+        agent.runtime.reset_for_new_turn(ConversationStatus::Running);
+
+        let notified = agent.cancel_notify.notified();
+        tokio::pin!(notified);
+        assert!(
+            tokio::time::timeout(std::time::Duration::from_millis(20), &mut notified)
+                .await
+                .is_err()
+        );
+
+        agent
+            .kill(Some(AgentKillReason::ConversationDeleted))
+            .expect("kill should request stop");
+
+        tokio::time::timeout(std::time::Duration::from_millis(50), &mut notified)
+            .await
+            .expect("running kill should wake in-flight turn");
+    }
+
+    #[tokio::test]
+    async fn corars_agent_kill_and_wait_waits_for_running_turn_terminal() {
+        let agent = CorarsAgentManager::new("conv-1".into(), "/project".into(), make_test_config(), None)
+            .await
+            .unwrap();
+        agent.runtime.reset_for_new_turn(ConversationStatus::Running);
+
+        let wait = agent.kill_and_wait(Some(AgentKillReason::ConversationDeleted));
+        tokio::pin!(wait);
+        assert!(
+            tokio::time::timeout(std::time::Duration::from_millis(20), &mut wait)
+                .await
+                .is_err(),
+            "kill_and_wait must not return before a running turn reaches a terminal event"
+        );
+
+        agent.runtime.emit_finish(None);
+        agent.turn_finished_notify.notify_waiters();
+
+        tokio::time::timeout(std::time::Duration::from_millis(50), &mut wait)
+            .await
+            .expect("kill_and_wait should return after terminal notification");
+    }
+
+    #[tokio::test]
+    async fn corars_agent_kill_idle_turn_does_not_leave_stale_stop_signal() {
+        let agent = CorarsAgentManager::new("conv-1".into(), "/project".into(), make_test_config(), None)
+            .await
+            .unwrap();
+
+        agent
+            .kill(Some(AgentKillReason::ConversationDeleted))
+            .expect("idle kill should be harmless");
+
+        assert_no_stop_signal(&agent).await;
+    }
+
+    #[tokio::test]
+    async fn corars_agent_confirmations_initially_empty() {
+        let agent = CorarsAgentManager::new("conv-1".into(), "/project".into(), make_test_config(), None)
+            .await
+            .unwrap();
+        assert!(agent.get_confirmations().is_empty());
+    }
+
+    #[tokio::test]
+    async fn corars_agent_get_slash_commands_does_not_wait_for_engine_lock() {
+        let agent = CorarsAgentManager::new("conv-1".into(), "/project".into(), make_test_config(), None)
+            .await
+            .unwrap();
+
+        let _engine_guard = agent.engine.lock().await;
+        let commands = tokio::time::timeout(std::time::Duration::from_millis(50), agent.get_slash_commands())
+            .await
+            .expect("slash command metadata should not wait for an active engine run")
+            .unwrap();
+
+        assert!(!commands.is_empty());
+    }
+
+    #[tokio::test]
+    async fn corars_agent_check_approval_returns_false_by_default() {
+        let agent = CorarsAgentManager::new("conv-1".into(), "/project".into(), make_test_config(), None)
+            .await
+            .unwrap();
+        assert!(!agent.check_approval("any_action", None));
+    }
+
+    #[tokio::test]
+    async fn stop_only_signals_in_flight_run() {
+        let agent = CorarsAgentManager::new("conv-stop".into(), "/project".into(), make_test_config(), None)
+            .await
+            .unwrap();
+        let mut rx = agent.subscribe();
+
+        agent.cancel().await.unwrap();
+
+        assert_eq!(agent.status(), Some(ConversationStatus::Pending));
+        assert!(matches!(rx.try_recv(), Err(broadcast::error::TryRecvError::Empty)));
+        assert_no_stop_signal(&agent).await;
+    }
+
+    #[tokio::test]
+    async fn runtime_can_emit_error_and_finish() {
+        let agent = CorarsAgentManager::new("conv-err".into(), "/project".into(), make_test_config(), None)
+            .await
+            .unwrap();
+        let mut rx = agent.subscribe();
+
+        agent.runtime.emit_error("test error");
+        // emit_error sets status to Finished, so emit_finish is a no-op here.
+        // We emit directly for the Finish broadcast path test:
+        agent
+            .runtime
+            .emit(AgentStreamEvent::Finish(crate::protocol::events::FinishEventData {
+                session_id: None,
+            }));
+
+        match rx.try_recv().unwrap() {
+            AgentStreamEvent::Error(data) => assert_eq!(data.message, "test error"),
+            other => panic!("Expected Error, got {:?}", other),
+        }
+        match rx.try_recv().unwrap() {
+            AgentStreamEvent::Finish(_) => {}
+            other => panic!("Expected Finish, got {:?}", other),
+        }
+    }
+}
