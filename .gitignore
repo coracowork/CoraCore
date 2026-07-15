@@ -577,3 +577,6 @@ graphify-out/
 
 .tmp/
 .playwright-mcp/
+
+# OpenCode/AionUi configuration.opencode/
+

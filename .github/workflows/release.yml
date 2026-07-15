@@ -4,13 +4,13 @@ on:
   workflow_call:
     inputs:
       tag_name:
-        description: "Release tag to build and publish (e.g., v0.2.4)"
+        description: "Release tag to build and publish (e.g., v0.2.5)"
         required: true
         type: string
   workflow_dispatch:
     inputs:
       tag_name:
-        description: "Release tag to build and publish (e.g., v0.2.4)"
+        description: "Release tag to build and publish (e.g., v0.2.5)"
         required: true
         type: string
 

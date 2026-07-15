@@ -38,7 +38,7 @@ fn managed_runtime_support_reports_current_platform() {
 #[test]
 fn classify_error_detects_bundled_node_runtime_missing() {
     let err = NodeRuntimeError::managed_invalid(
-        "bundled Node runtime missing under C:\\Program Files\\CoraUi\\resources\\bundled-coracore\\win32-x64\\managed-resources\\node\\node-v24.11.0-win-x64",
+        "bundled Node runtime missing under C:\\Program Files\\CoraCowork\\resources\\bundled-coracore\\win32-x64\\managed-resources\\node\\node-v24.11.0-win-x64",
     );
     let (kind, status) = classify_error(&err);
 
@@ -82,7 +82,7 @@ async fn bundled_runtime_missing_reports_bundled_resource_missing() {
 
 #[test]
 fn managed_runtime_install_lock_path_uses_runtime_root() {
-    let root = PathBuf::from("/tmp/cora-cowork/runtime/node");
+    let root = PathBuf::from("/tmp/coracowork/runtime/node");
     assert_eq!(install_lock_path(&root), root.join("node-runtime-install.lock"));
 }
 
@@ -115,6 +115,8 @@ fn managed_runtime_official_source_uses_nodejs_org() {
     let source = ManagedNodeDownloadSource::official(PlatformSpec {
         folder_suffix: "darwin-arm64",
         archive_ext: "tar.gz",
+        runtime_key: "darwin-arm64",
+        executable: "bin/node",
     });
 
     assert_eq!(source.source, "nodejs.org");
@@ -123,6 +125,28 @@ fn managed_runtime_official_source_uses_nodejs_org() {
         "https://nodejs.org/dist/v24.11.0/node-v24.11.0-darwin-arm64.tar.gz"
     );
     assert_eq!(source.sha256, None);
+}
+
+#[test]
+fn managed_node_contract_uses_runtime_key_and_exported_root() {
+    let tmp = tempfile::tempdir().unwrap();
+    let bundle_root = tmp.path().join("managed-resources");
+    let exported = bundle_root.join("node").join("node-v24.11.0-darwin-arm64");
+    std::fs::create_dir_all(exported.join("bin")).unwrap();
+    write_file(&exported.join("bin").join("node"));
+
+    let spec = PlatformSpec {
+        folder_suffix: "darwin-arm64",
+        archive_ext: "tar.gz",
+        runtime_key: "darwin-arm64",
+        executable: "bin/node",
+    };
+
+    let contract = managed_node_contract_for_export_with_spec(&bundle_root, &exported, spec).expect("contract");
+
+    assert_eq!(contract.version, "24.11.0");
+    assert_eq!(contract.root, "node/node-v24.11.0-darwin-arm64");
+    assert_eq!(contract.executable, "bin/node");
 }
 
 #[test]
@@ -213,6 +237,8 @@ async fn bundled_runtime_validation_failure_does_not_fallback_to_remote_download
         PlatformSpec {
             folder_suffix: "darwin-arm64",
             archive_ext: "tar.gz",
+            runtime_key: "darwin-arm64",
+            executable: "bin/node",
         },
         None,
     )
@@ -225,7 +251,7 @@ async fn bundled_runtime_validation_failure_does_not_fallback_to_remote_download
 
 #[test]
 fn windows_managed_cli_paths_use_node_modules_under_archive_root() {
-    let root = PathBuf::from(r"C:\CoraUi\node-v24.11.0-win-x64");
+    let root = PathBuf::from(r"C:\CoraCowork\node-v24.11.0-win-x64");
     let npm = managed_npm_cli_path_for_layout(&root, ManagedNodeArchiveLayout::Windows);
     let npx = managed_npx_cli_path_for_layout(&root, ManagedNodeArchiveLayout::Windows);
 
@@ -241,7 +267,7 @@ fn windows_managed_cli_paths_use_node_modules_under_archive_root() {
 
 #[test]
 fn unix_managed_cli_paths_use_lib_node_modules() {
-    let root = PathBuf::from("/opt/cora-cowork/node-v24.11.0-darwin-arm64");
+    let root = PathBuf::from("/opt/coracowork/node-v24.11.0-darwin-arm64");
     let npm = managed_npm_cli_path_for_layout(&root, ManagedNodeArchiveLayout::Unix);
     let npx = managed_npx_cli_path_for_layout(&root, ManagedNodeArchiveLayout::Unix);
 
