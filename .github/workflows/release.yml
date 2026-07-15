@@ -1,16 +1,19 @@
 ﻿name: Release
 
 on:
+  push:
+    tags:
+      - "v*"
   workflow_call:
     inputs:
       tag_name:
-        description: "Release tag to build and publish (e.g., v0.2.5)"
+        description: "Release tag to build and publish (e.g., v0.2.0)"
         required: true
         type: string
   workflow_dispatch:
     inputs:
       tag_name:
-        description: "Release tag to build and publish (e.g., v0.2.5)"
+        description: "Release tag to build and publish (e.g., v0.2.0)"
         required: true
         type: string
 
@@ -18,9 +21,15 @@ permissions:
   contents: write
 
 env:
+  BINARY_NAME: coracore
   CARGO_TERM_COLOR: always
   CARGO_HTTP_TIMEOUT: "600"
   CARGO_NET_RETRY: "10"
+  # cross commit used by the v0.1.39/v0.1.40 Linux ARM64 release builds.
+  CROSS_GIT_REV: "29d00c7803f221f1b3f35e561b03792368fb8339"
+  LINUX_X64_GLIBC_MAX: "GLIBC_2.34"
+  LINUX_ARM64_GLIBC_MAX: "GLIBC_2.30"
+  RELEASE_TAG: ${{ inputs.tag_name || github.ref_name }}
 
 jobs:
   prepare-release:
@@ -29,15 +38,13 @@ jobs:
     outputs:
       version: ${{ steps.metadata.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
-          ref: refs/tags/${{ inputs.tag_name }}
+          ref: refs/tags/${{ env.RELEASE_TAG }}
 
       - name: Extract version from tag
         id: metadata
         shell: bash
-        env:
-          RELEASE_TAG: ${{ inputs.tag_name }}
         run: |
           version="${RELEASE_TAG#v}"
           echo "version=${version}" >> "$GITHUB_OUTPUT"
@@ -50,28 +57,43 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
+          # Linux x86_64: build natively on ubuntu-22.04 (GLIBC 2.35) so the
+          # release binary runs on Debian 12 / Ubuntu 22.04+ / RHEL 9 /
+          # CentOS Stream 9. We cannot use `cross` here because the default
+          # cross docker image ships a gcc that aws-lc-sys's memcmp safety
+          # check rejects. Pinning the runner is simpler and covers the
+          # target audience — Debian 11 (GLIBC 2.31) is entering ELTS so we
+          # deliberately drop it.
+          - os: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
+            binary_name: coracore
+          # Linux aarch64: keep `cross` (its image happens to not trip the
+          # aws-lc-sys check and also yields an older GLIBC baseline).
           - os: ubuntu-latest
             target: aarch64-unknown-linux-gnu
+            binary_name: coracore
             use_cross: true
           - os: macos-latest
             target: x86_64-apple-darwin
+            binary_name: coracore
           - os: macos-latest
             target: aarch64-apple-darwin
+            binary_name: coracore
           - os: windows-latest
             target: x86_64-pc-windows-msvc
+            binary_name: coracore.exe
+            rustflags: "-C target-feature=+crt-static"
           - os: windows-latest
             target: aarch64-pc-windows-msvc
+            binary_name: coracore.exe
+            rustflags: "-C target-feature=+crt-static"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
-          ref: refs/tags/${{ inputs.tag_name }}
-          submodules: recursive
+          ref: refs/tags/${{ env.RELEASE_TAG }}
 
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: "1.95.0"
           targets: ${{ matrix.target }}
@@ -81,60 +103,73 @@ jobs:
         shell: pwsh
         run: Remove-Item 'C:\Program Files\Git\usr\bin\link.exe' -Force -ErrorAction SilentlyContinue
 
-      - name: Install MSVC ARM64 toolchain (Windows ARM64 only)
-        if: matrix.target == 'aarch64-pc-windows-msvc'
-        shell: pwsh
-        run: |
-          choco install visualstudio2022buildtools --yes --params "'--add Microsoft.VisualStudio.Component.VC.Tools.ARM64 --add Microsoft.VisualStudio.Component.Windows11SDK.22000 --includeRecommended --includeOptional'"
-
       - name: Cache cargo
         uses: Swatinem/rust-cache@v2
         with:
-          shared-key: release-${{ matrix.target }}
+          # Include runner OS image and cross baseline in the cache key.
+          # Proc-macro .so files link against the host GLIBC, so switching
+          # the runner (ubuntu-24.04 ↔ 22.04) or flipping native ↔ cross
+          # must fall into a different cache bucket — otherwise the cached
+          # .so is loaded against an incompatible GLIBC and cargo panics
+          # with "can't find crate" / "GLIBC_* not found" errors.
+          shared-key: release-${{ matrix.target }}-${{ matrix.os }}${{ matrix.target == 'x86_64-unknown-linux-gnu' && format('-glibc-{0}', env.LINUX_X64_GLIBC_MAX) || '' }}${{ matrix.use_cross == true && format('-cross-{0}-glibc-{1}', env.CROSS_GIT_REV, env.LINUX_ARM64_GLIBC_MAX) || '' }}
 
-      - name: Install cross (Linux aarch64)
+      - name: Verify pinned Linux ARM64 cross image is available
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: docker pull ghcr.io/cross-rs/aarch64-unknown-linux-gnu@sha256:99e041b94e7d4f31477c6ddede176688562c3762ba3833b75de3316100afc39d
+
+      - name: Install cross (Linux targets)
         if: matrix.use_cross == true
-        run: cargo install cross --git https://github.com/cross-rs/cross
-
-      - name: Install system deps (Linux)
-        if: runner.os == 'Linux' && matrix.use_cross != true
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y cmake pkg-config libssl-dev protobuf-compiler
+        run: cargo install cross --git https://github.com/cross-rs/cross --rev "${CROSS_GIT_REV}" --locked
 
       - name: Build release binary
         shell: bash
+        env:
+          RUSTFLAGS: ${{ matrix.rustflags || '' }}
         run: |
-          if [[ "${{ matrix.use_cross }}" == "true" ]]; then
-            cross build --release --target ${{ matrix.target }} -p cora-cowork-app
-          else
-            cargo build --release --target ${{ matrix.target }} -p cora-cowork-app
+          if [[ -n "${RUSTFLAGS:-}" ]]; then
+            echo "Using RUSTFLAGS=${RUSTFLAGS}"
           fi
+          if [[ "${{ matrix.use_cross }}" == "true" ]]; then
+            cross build --release --target ${{ matrix.target }} -p cora-cowrok-app
+          else
+            cargo build --release --target ${{ matrix.target }} -p cora-cowrok-app
+          fi
+
+      - name: Verify Linux ARM64 GLIBC baseline
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        shell: bash
+        run: scripts/check-glibc-baseline.sh "target/${{ matrix.target }}/release/${{ matrix.binary_name }}" "${LINUX_ARM64_GLIBC_MAX}"
+
+      - name: Verify Linux x64 GLIBC baseline
+        if: matrix.target == 'x86_64-unknown-linux-gnu'
+        shell: bash
+        run: scripts/check-glibc-baseline.sh "target/${{ matrix.target }}/release/${{ matrix.binary_name }}" "${LINUX_X64_GLIBC_MAX}"
 
       - name: Package binary (Unix)
         if: runner.os != 'Windows'
         shell: bash
         env:
-          TAG: ${{ inputs.tag_name }}
+          VERSION: ${{ needs.prepare-release.outputs.version }}
         run: |
           mkdir -p dist
-          ARCHIVE="CoraCore-${TAG}-${{ matrix.target }}.tar.gz"
-          tar -C target/${{ matrix.target }}/release -czf "dist/${ARCHIVE}" coracore
+          ARCHIVE="coracore-v${VERSION}-${{ matrix.target }}.tar.gz"
+          tar -C target/${{ matrix.target }}/release -czf "dist/${ARCHIVE}" ${{ matrix.binary_name }}
           echo "ARCHIVE=${ARCHIVE}" >> "$GITHUB_ENV"
 
       - name: Package binary (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         env:
-          TAG: ${{ inputs.tag_name }}
+          VERSION: ${{ needs.prepare-release.outputs.version }}
         run: |
           New-Item -ItemType Directory -Force -Path dist | Out-Null
-          $archive = "CoraCore-${env:TAG}-${{ matrix.target }}.zip"
-          Compress-Archive -Path "target/${{ matrix.target }}/release/coracore.exe" -DestinationPath "dist/${archive}" -Force
+          $archive = "coracore-v${env:VERSION}-${{ matrix.target }}.zip"
+          Compress-Archive -Path "target/${{ matrix.target }}/release/${{ matrix.binary_name }}" -DestinationPath "dist/${archive}" -Force
           "ARCHIVE=${archive}" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Upload release artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.target }}
           path: dist/${{ env.ARCHIVE }}
@@ -148,7 +183,7 @@ jobs:
       - build
     steps:
       - name: Download build artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: artifacts
           merge-multiple: true
@@ -157,13 +192,13 @@ jobs:
         shell: bash
         run: |
           cd artifacts
-          sha256sum CoraCore-* > cora-cowork-checksums.txt
+          sha256sum coracore-* > coracore-checksums.txt
 
       - name: Upload release assets
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_TAG: ${{ inputs.tag_name }}
+          RELEASE_TAG: ${{ inputs.tag_name || github.ref_name }}
           REPOSITORY: ${{ github.repository }}
         run: |
           release_url="https://github.com/${REPOSITORY}/releases/tag/${RELEASE_TAG}"
