@@ -131,9 +131,9 @@ jobs:
             echo "Using RUSTFLAGS=${RUSTFLAGS}"
           fi
           if [[ "${{ matrix.use_cross }}" == "true" ]]; then
-            cross build --release --target ${{ matrix.target }} -p cora-cowrok-app
+            cross build --release --target ${{ matrix.target }} -p cora-cowork-app
           else
-            cargo build --release --target ${{ matrix.target }} -p cora-cowrok-app
+            cargo build --release --target ${{ matrix.target }} -p cora-cowork-app
           fi
 
       - name: Verify Linux ARM64 GLIBC baseline
