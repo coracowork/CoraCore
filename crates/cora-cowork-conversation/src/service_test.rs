@@ -10,10 +10,12 @@ use cora_cowork_ai_agent::agent_task::{AgentInstance, IAgentTask, IMockAgent};
 use cora_cowork_ai_agent::protocol::events::tool_call::{ToolCallEventData, ToolCallStatus};
 use cora_cowork_ai_agent::protocol::events::{AgentStreamEvent, ErrorEventData, FinishEventData, TextEventData};
 use cora_cowork_ai_agent::types::{
-    CORA_COWORK_BASE_URL_ENV, CORA_COWORK_HELPER_BIN_ENV, BuildTaskOptions, CONVERSATION_RUNTIME_CONTEXT_VERSION, SendMessageData,
+    CORA_COWORK_BASE_URL_ENV, CORA_COWORK_HELPER_BIN_ENV, CORA_COWORK_RUNTIME_TOKEN_ENV, BuildTaskOptions,
+    CONVERSATION_RUNTIME_CONTEXT_VERSION, SendMessageData,
 };
 use cora_cowork_ai_agent::{
     AcpError, AgentAvailabilityFeedbackPort, AgentError, AgentSendError, AgentSessionKind, IWorkerTaskManager,
+    RuntimeTokenService,
 };
 
 use cora_cowork_api_types::{
@@ -1264,8 +1266,6 @@ async fn upsert_test_assistant_definition_with_thought_level(
         source: "builtin",
         owner_type: "system",
         source_ref: Some(assistant_id),
-        source_version: None,
-        source_hash: None,
         name: assistant_id,
         name_i18n: "{}",
         description: Some("desc"),
@@ -1275,7 +1275,6 @@ async fn upsert_test_assistant_definition_with_thought_level(
         agent_id,
         rule_resource_type: "builtin_asset",
         rule_resource_ref: Some(assistant_id),
-        rule_inline_content: None,
         recommended_prompts: "[]",
         recommended_prompts_i18n: "{}",
         default_model_mode,
@@ -1348,7 +1347,7 @@ async fn insert_conversation_with_type(repo: &Arc<MockRepo>, user_id: &str, agen
         .to_string(),
         model: None,
         status: Some("finished".into()),
-        source: Some("cora-cowork".into()),
+        source: Some("coracowork".into()),
         channel_chat_id: None,
         pinned: false,
         pinned_at: None,
@@ -1371,7 +1370,7 @@ async fn create_returns_conversation_with_defaults() {
     assert!(!resp.id.is_empty());
     assert_eq!(resp.r#type, AgentType::Acp);
     assert_eq!(resp.status, ConversationStatus::Pending);
-    assert_eq!(resp.source, Some(ConversationSource::Coracowork));
+    assert_eq!(resp.source, Some(ConversationSource::CoraCowork));
     assert!(!resp.pinned);
     assert!(resp.pinned_at.is_none());
     assert_eq!(resp.extra["workspace"], workspace);
@@ -1384,7 +1383,7 @@ async fn create_returns_conversation_with_defaults() {
     assert_eq!(events[0].name, "conversation.listChanged");
     assert_eq!(events[0].data["action"], "created");
     assert_eq!(events[0].data["conversation_id"], resp.id);
-    assert_eq!(events[0].data["source"], "cora-cowork");
+    assert_eq!(events[0].data["source"], "coracowork");
 }
 
 #[tokio::test]
@@ -3385,7 +3384,7 @@ async fn send_message_injects_conversation_runtime_context() {
 async fn send_message_injects_configured_runtime_helper_context() {
     let (svc, _broadcaster, _repo, _default_task_mgr) = make_service();
     let svc = svc.with_runtime_helper_context(
-        "/Applications/coracowork/coracore".to_owned(),
+        "/Applications/CoraCowork/coracore".to_owned(),
         "http://127.0.0.1:51234".to_owned(),
     );
     let conv = svc.create("user_1", make_create_req()).await.unwrap();
@@ -3404,7 +3403,7 @@ async fn send_message_injects_configured_runtime_helper_context() {
     assert!(
         options[0].context.runtime_env.contains(&(
             CORA_COWORK_HELPER_BIN_ENV.to_owned(),
-            "/Applications/coracowork/coracore".to_owned()
+            "/Applications/CoraCowork/coracore".to_owned()
         )),
         "runtime env should include CORA_COWORK_HELPER_BIN"
     );
@@ -3889,6 +3888,75 @@ async fn set_config_option_persists_runtime_model_into_assistant_preference_when
     assert_eq!(
         snapshot_after_thought.resolved_thought_level_value.as_deref(),
         Some("high")
+    );
+}
+
+#[tokio::test]
+async fn set_config_option_does_not_persist_preference_on_error() {
+    let task_mgr = Arc::new(MockTaskManager::new());
+    let (svc, _broadcaster, _repo, definition_repo, overlay_repo, preference_repo) =
+        make_service_with_mock_task_manager_and_assistant_support(task_mgr.clone()).await;
+
+    upsert_test_assistant_definition(
+        &definition_repo,
+        "asstdef_acp_auto",
+        "assistant-acp-auto",
+        "codex",
+        "auto",
+        "auto",
+    )
+    .await;
+    overlay_repo
+        .upsert(&UpsertAssistantOverlayParams {
+            assistant_definition_id: "asstdef_acp_auto",
+            enabled: true,
+            sort_order: 0,
+            agent_id_override: None,
+            last_used_at: None,
+        })
+        .await
+        .unwrap();
+    preference_repo
+        .upsert(&UpsertAssistantPreferenceParams {
+            assistant_definition_id: "asstdef_acp_auto",
+            last_model_id: Some("original-model"),
+            last_permission_value: Some("original-mode"),
+            last_thought_level_value: Some("original-low"),
+            last_skill_ids: "[]",
+            last_disabled_builtin_skill_ids: "[]",
+            last_mcp_ids: "[]",
+        })
+        .await
+        .unwrap();
+
+    let conv = create_assistant_backed_conversation(&svc, "user_1", Some("acp"), "codex", "assistant-acp-auto").await;
+
+    // Agent reports a session-change conflict (mirrors the legacy ACK-then-
+    // session-changed race): the service must return the error and leave the
+    // persisted preference untouched.
+    let agent = Arc::new(
+        MockAgent::new(&conv.id).with_set_config_option_error(AgentError::conflict(
+            "Active ACP session changed while applying config option",
+        )),
+    );
+    task_mgr.insert_agent(&conv.id, AgentInstance::Mock(agent));
+
+    let result = svc
+        .set_config_option(
+            &conv.id,
+            "model",
+            SetConfigOptionRequest {
+                value: "gpt-5.5".to_owned(),
+            },
+        )
+        .await;
+    assert!(result.is_err(), "conflict from agent must surface as error");
+
+    let pref_after = preference_repo.get("asstdef_acp_auto").await.unwrap().unwrap();
+    assert_eq!(
+        pref_after.last_model_id.as_deref(),
+        Some("original-model"),
+        "preference must not be written when set_config_option errors"
     );
 }
 
@@ -4995,7 +5063,7 @@ async fn send_message_records_agent_availability_feedback_on_send_failure() {
 
     let mut create_req = make_create_req();
     create_req.name = Some("Feedback Conversation".into());
-    create_req.source = Some(ConversationSource::Coracowork);
+    create_req.source = Some(ConversationSource::CoraCowork);
     create_req.extra = json!({
         "backend": "claude",
         "agent_id": "agent-feedback-1",
@@ -5040,7 +5108,7 @@ async fn send_message_records_agent_availability_feedback_on_send_success() {
 
     let mut create_req = make_create_req();
     create_req.name = Some("Feedback Success Conversation".into());
-    create_req.source = Some(ConversationSource::Coracowork);
+    create_req.source = Some(ConversationSource::CoraCowork);
     create_req.extra = json!({
         "backend": "claude",
         "agent_id": "agent-feedback-success",
@@ -5643,6 +5711,43 @@ async fn warmup_injects_conversation_runtime_context() {
 }
 
 #[tokio::test]
+async fn warmup_injects_runtime_token_for_mcp_team_conversation() {
+    let (svc, _broadcaster, _repo, _default_task_mgr) = make_service();
+    let svc = svc.with_runtime_token_service(Arc::new(RuntimeTokenService::new()));
+    let mut req = make_create_req();
+    req.extra = serde_json::json!({
+        "teamId": "team-1",
+        "slot_id": "slot-1",
+        "role": "lead",
+        "team_mcp_stdio_config": {
+            "team_id": "team-1",
+            "port": 4242,
+            "token": "mcp-token",
+            "slot_id": "slot-1",
+            "binary_path": "/tmp/coracore"
+        }
+    });
+    let conv = svc.create("user_1", req).await.unwrap();
+    let task_mgr = Arc::new(RebuildingScriptedTaskManager::new(vec![AgentInstance::Mock(Arc::new(
+        MockAgent::new(&conv.id),
+    ))]));
+    let task_mgr_dyn: Arc<dyn IWorkerTaskManager> = task_mgr.clone();
+
+    svc.warmup("user_1", &conv.id, &task_mgr_dyn).await.unwrap();
+
+    let options = task_mgr.captured_options();
+    assert_eq!(options.len(), 1);
+    assert!(
+        options[0]
+            .context
+            .runtime_env
+            .iter()
+            .any(|(key, value)| key == CORA_COWORK_RUNTIME_TOKEN_ENV && !value.is_empty()),
+        "MCP Team conversations should receive CORA_COWORK_RUNTIME_TOKEN for CLI fallback"
+    );
+}
+
+#[tokio::test]
 async fn warmup_rejects_legacy_runtime_conversations_as_archived() {
     let (svc, _broadcaster, repo, _task_mgr) = make_service();
     let task_mgr: Arc<dyn IWorkerTaskManager> = Arc::new(MockTaskManager::new());
@@ -6121,8 +6226,6 @@ async fn create_resolves_assistant_snapshot_and_updates_preferences() {
             source: "builtin",
             owner_type: "system",
             source_ref: Some("preset-1"),
-            source_version: None,
-            source_hash: None,
             name: "Preset",
             name_i18n: "{}",
             description: Some("desc"),
@@ -6132,7 +6235,6 @@ async fn create_resolves_assistant_snapshot_and_updates_preferences() {
             agent_id: "claude",
             rule_resource_type: "builtin_asset",
             rule_resource_ref: Some("preset-1"),
-            rule_inline_content: None,
             recommended_prompts: "[]",
             recommended_prompts_i18n: "{}",
             default_model_mode: "auto",
@@ -6284,8 +6386,6 @@ async fn existing_conversation_reads_current_assistant_identity() {
             source: "user",
             owner_type: "user",
             source_ref: Some("live-identity"),
-            source_version: None,
-            source_hash: None,
             name: "Old Name",
             name_i18n: "{}",
             description: None,
@@ -6295,7 +6395,6 @@ async fn existing_conversation_reads_current_assistant_identity() {
             agent_id: "claude",
             rule_resource_type: "none",
             rule_resource_ref: None,
-            rule_inline_content: None,
             recommended_prompts: "[]",
             recommended_prompts_i18n: "{}",
             default_model_mode: "auto",
@@ -6343,8 +6442,6 @@ async fn existing_conversation_reads_current_assistant_identity() {
             source: "user",
             owner_type: "user",
             source_ref: Some("live-identity"),
-            source_version: None,
-            source_hash: None,
             name: "New Name",
             name_i18n: "{}",
             description: None,
@@ -6354,7 +6451,6 @@ async fn existing_conversation_reads_current_assistant_identity() {
             agent_id: "claude",
             rule_resource_type: "none",
             rule_resource_ref: None,
-            rule_inline_content: None,
             recommended_prompts: "[]",
             recommended_prompts_i18n: "{}",
             default_model_mode: "auto",
@@ -6417,8 +6513,6 @@ async fn create_routes_asset_avatar_in_assistant_identity_through_backend() {
             source: "user",
             owner_type: "user",
             source_ref: Some("custom-data-avatar"),
-            source_version: None,
-            source_hash: None,
             name: "Data Avatar",
             name_i18n: "{}",
             description: None,
@@ -6428,7 +6522,6 @@ async fn create_routes_asset_avatar_in_assistant_identity_through_backend() {
             agent_id: "claude",
             rule_resource_type: "none",
             rule_resource_ref: None,
-            rule_inline_content: None,
             recommended_prompts: "[]",
             recommended_prompts_i18n: "{}",
             default_model_mode: "auto",
@@ -6578,8 +6671,6 @@ async fn create_prefers_assistant_snapshot_over_legacy_runtime_seed_fields() {
             source: "builtin",
             owner_type: "system",
             source_ref: Some("preset-1"),
-            source_version: None,
-            source_hash: None,
             name: "Preset",
             name_i18n: "{}",
             description: Some("desc"),
@@ -6589,7 +6680,6 @@ async fn create_prefers_assistant_snapshot_over_legacy_runtime_seed_fields() {
             agent_id: "claude",
             rule_resource_type: "builtin_asset",
             rule_resource_ref: Some("preset-1"),
-            rule_inline_content: None,
             recommended_prompts: "[]",
             recommended_prompts_i18n: "{}",
             default_model_mode: "auto",
@@ -6742,8 +6832,6 @@ async fn create_does_not_overwrite_preferences_for_fixed_skills_and_mcps() {
             source: "builtin",
             owner_type: "system",
             source_ref: Some("preset-fixed"),
-            source_version: None,
-            source_hash: None,
             name: "Preset Fixed",
             name_i18n: "{}",
             description: Some("desc"),
@@ -6753,7 +6841,6 @@ async fn create_does_not_overwrite_preferences_for_fixed_skills_and_mcps() {
             agent_id: "claude",
             rule_resource_type: "builtin_asset",
             rule_resource_ref: Some("preset-fixed"),
-            rule_inline_content: None,
             recommended_prompts: "[]",
             recommended_prompts_i18n: "{}",
             default_model_mode: "auto",
@@ -6843,8 +6930,6 @@ async fn create_with_auto_builtin_defaults_without_preferences_keeps_snapshot_va
             source: "builtin",
             owner_type: "system",
             source_ref: Some("preset-auto"),
-            source_version: None,
-            source_hash: None,
             name: "Preset Unset",
             name_i18n: "{}",
             description: Some("desc"),
@@ -6854,7 +6939,6 @@ async fn create_with_auto_builtin_defaults_without_preferences_keeps_snapshot_va
             agent_id: "claude",
             rule_resource_type: "builtin_asset",
             rule_resource_ref: Some("preset-auto"),
-            rule_inline_content: None,
             recommended_prompts: "[]",
             recommended_prompts_i18n: "{}",
             default_model_mode: "auto",
@@ -7122,7 +7206,7 @@ async fn get_backfills_legacy_row_and_persists() {
         .unwrap(),
         model: None,
         status: Some("finished".into()),
-        source: Some("cora-cowork".into()),
+        source: Some("coracowork".into()),
         channel_chat_id: None,
         pinned: false,
         pinned_at: None,

@@ -1,12 +1,12 @@
 ﻿---
 name: cora-cowork-config
 description: >-
-  Configure CoraUi itself through the bundled coracore config CLI: create and edit assistants, update assistant rules, inspect and import skills, manage MCP servers, configure model providers, update settings, manage agents, configure scheduled tasks, and manage app configuration from an agent conversation. Use when the user wants you to set up or modify an CoraUi assistant, attach skills, change an assistant's system prompt, add MCP or model provider configuration, schedule recurring work, or otherwise configure their CoraUi installation, including when the user needs to know whether assistant changes affect the current conversation or only new conversations.
+  Configure CoraCowork itself through the bundled coracore config CLI: create and edit assistants, update assistant rules, inspect and import skills, manage MCP servers, configure model providers, update settings, manage agents, configure scheduled tasks, and manage app configuration from an agent conversation. Use when the user wants you to set up or modify an CoraCowork assistant, attach skills, change an assistant's system prompt, add MCP or model provider configuration, schedule recurring work, or otherwise configure their CoraCowork installation, including when the user needs to know whether assistant changes affect the current conversation or only new conversations.
 ---
 
-# CoraUi Config
+# CoraCowork Config
 
-Configure CoraUi with the bundled agent-facing CLI. Do not discover ports, do
+Configure CoraCowork with the bundled agent-facing CLI. Do not discover ports, do
 not call raw backend paths, and do not depend on tools outside the bundled
 `coracore` binary.
 
@@ -69,7 +69,7 @@ rules or defaults.
 
 ## Assistant Change Timing
 
-CoraUi persists assistant configuration immediately, but running conversations
+CoraCowork persists assistant configuration immediately, but running conversations
 may keep the assistant snapshot created when the conversation started. Use this
 timing model when reporting successful assistant changes:
 

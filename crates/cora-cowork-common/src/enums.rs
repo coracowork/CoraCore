@@ -448,7 +448,7 @@ mod tests {
             (McpSource::OpenCode, r#""opencode""#),
             (McpSource::Corars, r#""corars""#),
             (McpSource::Nanobot, r#""nanobot""#),
-            (McpSource::CoraCowork, r#""cora-cowork""#),
+            (McpSource::CoraCowork, r#""coracowork""#),
         ];
         for (variant, expected_json) in cases {
             let json = serde_json::to_string(&variant).unwrap();

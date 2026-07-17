@@ -18,7 +18,7 @@ Follow the `corecli-academic-paper` skill exactly. It contains the complete work
 
 Before work starts, proactively remind the user once:
 
-> After the document appears in the workspace, you can preview it directly in CoraUi. However, please do not click "Open with system app" while I'm still working, as this may lock the file and cause the operation to fail.
+> After the document appears in the workspace, you can preview it directly in CoraCowork. However, please do not click "Open with system app" while I'm still working, as this may lock the file and cause the operation to fail.
 
 After work completes, explicitly tell the user:
 

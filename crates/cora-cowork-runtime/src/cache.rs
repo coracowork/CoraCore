@@ -6,7 +6,7 @@ use std::sync::OnceLock;
 /// Override for [`runtime_root`], set by [`init`] from the backend startup
 /// path so managed runtime artifacts land under `AppConfig.data_dir`.
 ///
-/// Lifecycle: written once by `cora-cowork-app`'s `main()` before
+/// Lifecycle: written once by `cora_cowork-app`'s `main()` before
 /// managed runtimes are resolved, and read every time [`runtime_root`] is
 /// queried thereafter. Callers that miss the init window transparently
 /// fall back to `dirs::cache_dir()`.
@@ -29,15 +29,15 @@ pub fn init(data_dir: impl AsRef<Path>) {
     }
 }
 
-/// Returns the root cache directory used for all cora-cowork runtime artifacts.
+/// Returns the root cache directory used for all coracowork runtime artifacts.
 ///
 /// Priority:
 /// 1. Path supplied via [`init`] (`{data_dir}/runtime`) when the backend
 ///    started with `--data-dir`.
 /// 2. Platform cache dir (via `dirs::cache_dir()`):
-///    - macOS:   `~/Library/Caches/cora-cowork/runtime`
-///    - Linux:   `$XDG_CACHE_HOME/cora-cowork/runtime` (fallback `~/.cache/cora-cowork/runtime`)
-///    - Windows: `%LOCALAPPDATA%\cora-cowork\runtime`
+///    - macOS:   `~/Library/Caches/coracowork/runtime`
+///    - Linux:   `$XDG_CACHE_HOME/coracowork/runtime` (fallback `~/.cache/coracowork/runtime`)
+///    - Windows: `%LOCALAPPDATA%\coracowork\runtime`
 ///
 /// Returns `None` only when neither [`init`] has run nor a platform cache
 /// dir is determinable (exotic envs).
@@ -45,7 +45,7 @@ pub fn runtime_root() -> Option<PathBuf> {
     if let Some(p) = RUNTIME_ROOT_OVERRIDE.get() {
         return Some(p.clone());
     }
-    dirs::cache_dir().map(|d| d.join("cora-cowork").join("runtime"))
+    dirs::cache_dir().map(|d| d.join("coracowork").join("runtime"))
 }
 
 pub fn node_runtime_root() -> Option<PathBuf> {
@@ -69,7 +69,7 @@ mod tests {
             .take(2)
             .map(|c| c.as_os_str().to_string_lossy().into_owned())
             .collect();
-        assert_eq!(tail, vec!["runtime".to_string(), "cora-cowork".to_string()]);
+        assert_eq!(tail, vec!["runtime".to_string(), "coracowork".to_string()]);
     }
 
     #[test]
@@ -83,7 +83,7 @@ mod tests {
             .collect();
         assert_eq!(
             tail,
-            vec!["node".to_string(), "runtime".to_string(), "cora-cowork".to_string()]
+            vec!["node".to_string(), "runtime".to_string(), "coracowork".to_string()]
         );
     }
 
@@ -102,7 +102,7 @@ mod tests {
                 "acp".to_string(),
                 "managed-tools".to_string(),
                 "runtime".to_string(),
-                "cora-cowork".to_string()
+                "coracowork".to_string()
             ]
         );
     }

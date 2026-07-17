@@ -1,4 +1,4 @@
-﻿//! `coracore config` subcommand: agent-facing automation CLI for CoraUi config.
+﻿//! `coracore config` subcommand: agent-facing automation CLI for Cora config.
 
 use std::collections::BTreeMap;
 use std::io::{self, Read, Write};
@@ -1382,7 +1382,7 @@ async fn request_json(
         ConfigError::new(
             ConfigErrorCode::HttpRequestFailed,
             command,
-            "failed to call CoraUi backend",
+            "failed to call Cora backend",
         )
         .field("path", path)
     })?;
@@ -1392,7 +1392,7 @@ async fn request_json(
         ConfigError::new(
             ConfigErrorCode::ResponseReadFailed,
             command,
-            "failed to read CoraUi backend response",
+            "failed to read Cora backend response",
         )
         .field("path", path)
     })?;
@@ -1408,7 +1408,7 @@ async fn request_json(
         return Err(ConfigError::new(
             ConfigErrorCode::HttpStatusError,
             command,
-            "CoraUi backend returned an error status",
+            "Cora backend returned an error status",
         )
         .field("path", path)
         .field("status", status.as_u16().to_string()));
@@ -1429,7 +1429,7 @@ async fn request_json(
         ConfigError::new(
             ConfigErrorCode::ResponseJsonInvalid,
             command,
-            "CoraUi backend returned invalid JSON",
+            "Cora backend returned invalid JSON",
         )
         .field("path", path)
     })?;
@@ -1465,7 +1465,7 @@ fn extract_api_data(value: Value, command: &str) -> Result<Value, ConfigError> {
     Err(ConfigError::new(
         ConfigErrorCode::HttpStatusError,
         command,
-        "CoraUi backend returned an unsuccessful response",
+        "Cora backend returned an unsuccessful response",
     ))
 }
 

@@ -283,7 +283,7 @@ pub fn save_states_to_file(path: &Path, states: &HashMap<String, ExtensionState>
     Ok(())
 }
 
-/// Resolve the extension state file path using the historical CoraUi rules.
+/// Resolve the extension state file path using the historical Cora rules.
 ///
 /// Priority:
 /// 1. `CORA_COWORK_EXTENSION_STATES_FILE`

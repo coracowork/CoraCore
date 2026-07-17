@@ -1,7 +1,7 @@
 ﻿-- Migration 008: Move builtin bridged ACP agents from `bun x --bun` to `npx`.
 --
 -- Managed Node runtime is now the supported bridge path for npm-based ACP
--- launchers. Keep exact package versions pinned so one CoraUi release remains
+-- launchers. Keep exact package versions pinned so one Cora release remains
 -- reproducible across installs and restarts.
 
 -- Claude Code (2d23ff1c)

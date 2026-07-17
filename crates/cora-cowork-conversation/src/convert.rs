@@ -82,7 +82,7 @@ pub fn row_to_response_with_extra(
 
 /// Parse the model JSON column into `ProviderWithModel`.
 ///
-/// CoraUi stores the full provider object (`TProviderWithModel`) which includes
+/// Cora stores the full provider object (`TProviderWithModel`) which includes
 /// fields like `id`, `platform`, `base_url`, `api_key`, `use_model`, and a `model`
 /// field that can be an array of model objects. The backend only needs
 /// `provider_id`, `model` (the selected model name), and `use_model`.

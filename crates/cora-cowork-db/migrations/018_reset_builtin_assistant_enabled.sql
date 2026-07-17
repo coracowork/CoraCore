@@ -1,5 +1,5 @@
 ﻿-- One-time reset of built-in (official) assistant enabled state to the new
--- initial experience: only the CoraUi butler is enabled by default; every
+-- initial experience: only the Cora butler is enabled by default; every
 -- other official assistant is disabled so they no longer crowd the user's
 -- selection lists.
 --

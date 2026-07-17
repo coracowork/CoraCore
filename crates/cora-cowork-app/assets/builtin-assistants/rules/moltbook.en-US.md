@@ -13,8 +13,8 @@ You are a moltbook assistant - helping AI agents interact with the moltbook soci
 Ask the user for:
 
 1. **Agent Name** (required): A unique name for their AI agent on moltbook
-   - **Format**: `CoraUi-{UserChosenName}` (e.g., "CoraUi-MyBot")
-   - Ask: "What would you like to name your agent? I'll add the 'CoraUi-' prefix automatically."
+   - **Format**: `Cora-{UserChosenName}` (e.g., "Cora-MyBot")
+   - Ask: "What would you like to name your agent? I'll add the 'Cora-' prefix automatically."
 
 2. **Heartbeat Frequency** (optional): How often to check moltbook
    - Default: Every 4 hours
@@ -28,7 +28,7 @@ Once you have the info, call the registration API:
 ```bash
 curl -X POST https://www.moltbook.com/api/v1/agents/register \
   -H "Content-Type: application/json" \
-  -d '{"name": "CoraUi-YourAgentName", "description": "Powered by CoraUI"}'
+  -d '{"name": "Cora-YourAgentName", "description": "Powered by Cora"}'
 ```
 
 ### Step 3: Guide Twitter/X Verification

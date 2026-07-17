@@ -458,7 +458,7 @@ impl AgentRegistry {
     /// probe rules.
     ///
     /// Reasons are only attached to rows whose `available` flag is
-    /// `false`. Internal rows (e.g. the corars row) intentionally
+    /// `false`. Internal rows (e.g. the Corars row) intentionally
     /// have an empty `command`, so the underlying probe always
     /// reports `NoCommand` for them — surfacing that as a "reason"
     /// when `available = true` would just confuse the caller, so we
@@ -600,8 +600,8 @@ fn decode_row(
     // the runtime spawn (factory) and the probe (availability) observe the
     // same merged command/env without either needing extra plumbing.
     let command_override = meta_command_override(&command_override_raw);
-    let is_internal_cora_cli = is_internal_cora_cli(&meta);
-    if is_internal_cora_cli && command_override.is_some() {
+    let is_internal_Cora_cli = is_internal_Cora_cli(&meta);
+    if is_internal_Cora_cli && command_override.is_some() {
         warn!(
             id = %meta.id,
             name = %meta.name,
@@ -609,7 +609,7 @@ fn decode_row(
         );
     }
     let env_override = parse_env_override(&env_override_raw);
-    if is_internal_cora_cli && env_override.as_ref().is_some_and(|entries| !entries.is_empty()) {
+    if is_internal_Cora_cli && env_override.as_ref().is_some_and(|entries| !entries.is_empty()) {
         warn!(
             id = %meta.id,
             name = %meta.name,
@@ -617,19 +617,19 @@ fn decode_row(
         );
     }
 
-    meta.has_command_override = command_override.is_some() && !is_internal_cora_cli;
+    meta.has_command_override = command_override.is_some() && !is_internal_Cora_cli;
     meta.env_override_key_count = env_override
         .as_ref()
-        .filter(|_| !is_internal_cora_cli)
+        .filter(|_| !is_internal_Cora_cli)
         .map(|v| v.iter().filter(|e| !is_blocked_override_env_key(&e.name)).count())
         .unwrap_or(0);
 
-    if is_internal_cora_cli {
+    if is_internal_Cora_cli {
         meta.command = None;
     } else if let Some(path) = command_override {
         meta.command = Some(path);
     }
-    if !is_internal_cora_cli && let Some(extra) = env_override {
+    if !is_internal_Cora_cli && let Some(extra) = env_override {
         for entry in extra {
             if is_blocked_override_env_key(&entry.name) {
                 tracing::warn!(key = %entry.name, "env override: blocked key skipped");
@@ -646,7 +646,7 @@ fn decode_row(
     Some((meta, reason))
 }
 
-fn is_internal_cora_cli(meta: &AgentMetadata) -> bool {
+fn is_internal_Cora_cli(meta: &AgentMetadata) -> bool {
     meta.agent_type == AgentType::Corars && meta.agent_source == AgentSource::Internal
 }
 
@@ -803,7 +803,7 @@ fn probe_with_reason(meta: &AgentMetadata) -> (Option<PathBuf>, Option<Unavailab
 
 /// Emit a single per-row line summarizing the probe outcome. Available
 /// rows go to `debug!` (one per startup × N agents is noisy at info);
-/// unavailable rows go to `info!` so the default coracore.log surfaces
+/// unavailable rows go to `info!` so the default Coracore.log surfaces
 /// the reason without needing `--log-level debug` after a user
 /// reports "no agent works".
 fn log_probe_result(meta: &AgentMetadata, reason: &Option<UnavailableReason>) {
@@ -1408,7 +1408,7 @@ mod tests {
         // Cora CLI (internal, no spawn command) is always available.
         assert!(
             visible.iter().any(|m| m.agent_type == AgentType::Corars),
-            "internal corars row should survive the filter"
+            "internal Corars row should survive the filter"
         );
     }
 
@@ -1427,17 +1427,17 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn corars_internal_row_is_available_without_command() {
+    async fn Corars_internal_row_is_available_without_command() {
         let reg = registry().await;
-        let corars = reg
+        let Corars = reg
             .list_by_agent_type(AgentType::Corars)
             .await
             .into_iter()
             .next()
             .unwrap();
-        assert_eq!(corars.agent_source, AgentSource::Internal);
-        assert!(corars.command.is_none());
-        assert!(corars.available);
+        assert_eq!(Corars.agent_source, AgentSource::Internal);
+        assert!(Corars.command.is_none());
+        assert!(Corars.available);
     }
 
     #[tokio::test]
@@ -1545,15 +1545,15 @@ mod tests {
             }
         }
 
-        // The internal corars row is always available — its reason
+        // The internal Corars row is always available — its reason
         // slot must be None (sanity check that "available" doesn't
         // accidentally co-occur with a reason).
-        let corars = snapshot
+        let Corars = snapshot
             .iter()
             .find(|(m, _)| m.agent_type == AgentType::Corars)
-            .expect("corars seed row");
-        assert!(corars.0.available);
-        assert!(corars.1.is_none());
+            .expect("Corars seed row");
+        assert!(Corars.0.available);
+        assert!(Corars.1.is_none());
     }
 
     /// An empty snapshot is a no-op — no column gets overwritten.
@@ -1650,7 +1650,7 @@ mod tests {
     }
 
     #[test]
-    fn decode_row_ignores_internal_cora_cli_overrides() {
+    fn decode_row_ignores_internal_Cora_cli_overrides() {
         use cora_cowork_db::AgentMetadataRow;
         let row = AgentMetadataRow {
             id: "632f31d2".to_string(),
@@ -1660,7 +1660,7 @@ mod tests {
             description: None,
             description_i18n: None,
             backend: None,
-            agent_type: "corars".to_string(),
+            agent_type: "Corars".to_string(),
             agent_source: "internal".to_string(),
             agent_source_info: None,
             enabled: true,

@@ -304,7 +304,7 @@ async fn request_json(
             DiagnoseError::new(
                 DiagnoseErrorCode::HttpRequestFailed,
                 command,
-                "failed to call CoraUi backend",
+                "failed to call Cora backend",
             )
             .field("path", path)
         })?;
@@ -314,7 +314,7 @@ async fn request_json(
         DiagnoseError::new(
             DiagnoseErrorCode::ResponseReadFailed,
             command,
-            "failed to read CoraUi backend response",
+            "failed to read Cora backend response",
         )
         .field("path", path)
     })?;
@@ -323,7 +323,7 @@ async fn request_json(
         return Err(DiagnoseError::new(
             DiagnoseErrorCode::HttpStatusError,
             command,
-            "CoraUi backend returned an error status",
+            "Cora backend returned an error status",
         )
         .field("path", path)
         .field("status", status.as_u16().to_string()));
@@ -337,7 +337,7 @@ async fn request_json(
         DiagnoseError::new(
             DiagnoseErrorCode::ResponseJsonInvalid,
             command,
-            "CoraUi backend returned invalid JSON",
+            "Cora backend returned invalid JSON",
         )
         .field("path", path)
     })?;
@@ -356,7 +356,7 @@ fn extract_api_data(value: Value, command: &str) -> Result<Value, DiagnoseError>
     Err(DiagnoseError::new(
         DiagnoseErrorCode::HttpStatusError,
         command,
-        "CoraUi backend returned an unsuccessful response",
+        "Cora backend returned an unsuccessful response",
     ))
 }
 

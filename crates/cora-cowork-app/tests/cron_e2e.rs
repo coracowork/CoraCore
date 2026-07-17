@@ -11,7 +11,7 @@ use axum::http::StatusCode;
 use serde_json::json;
 use tower::ServiceExt;
 
-use cora_cowork_db::{
+use cora-cowork_db::{
     CreateMcpServerParams, IConversationRepository, ICronRepository, IMcpServerRepository,
     SqliteConversationRepository, SqliteCronRepository, SqliteMcpServerRepository,
 };
@@ -150,7 +150,7 @@ fn cron_skill_does_not_instruct_agents_to_write_payload_files() {
     assert!(!skill.contains("cat >"));
     assert!(!skill.contains("/tmp/cora-cowork-cron"));
     assert!(!skill.contains("python3"));
-    assert!(!skill.contains("cora_cowork_cron.py"));
+    assert!(!skill.contains("cora-cowork_cron.py"));
     assert!(skill.contains("$CORA_COWORK_HELPER_BIN"));
     assert!(!skill.contains("cron-helper"));
     assert!(skill.contains("config cron current list"));
@@ -201,7 +201,7 @@ async fn cj2_create_three_schedule_types() {
     let (mut app, services) = build_app().await;
     let (token, csrf) = setup_and_login(&mut app, &services, "admin", "StrongP@ss1").await;
 
-    let now = cora_cowork_common::now_ms();
+    let now = cora-cowork_common::now_ms();
 
     let at = create_job(&mut app, &token, &csrf, create_at_job_body("At Job", now + 3_600_000)).await;
     assert_eq!(at["schedule"]["kind"], "at");
@@ -254,7 +254,7 @@ async fn cj3b_create_accepts_workspace_with_whitespace_segment() {
     let (mut app, services) = build_app().await;
     let (token, csrf) = setup_and_login(&mut app, &services, "admin", "StrongP@ss1").await;
     ensure_default_assistant(&mut app, &token, &csrf).await;
-    let dir = std::env::temp_dir().join(format!("cora-cowork-cron-test-{}", cora_cowork_common::generate_short_id()));
+    let dir = std::env::temp_dir().join(format!("cora-cowork-cron-test-{}", cora-cowork_common::generate_short_id()));
     std::fs::create_dir(&dir).unwrap();
     let workspace = dir.join("Archive ");
     std::fs::create_dir(&workspace).unwrap();
@@ -363,14 +363,14 @@ async fn cj5b_run_now_legacy_workspace_with_whitespace_succeeds() {
     let (token, csrf) = setup_and_login(&mut app, &services, "admin", "StrongP@ss1").await;
     ensure_default_assistant(&mut app, &token, &csrf).await;
     let cron_repo = SqliteCronRepository::new(services.database.pool().clone());
-    let now = cora_cowork_common::now_ms();
-    let dir = std::env::temp_dir().join(format!("cora-cowork-cron-test-{}", cora_cowork_common::generate_short_id()));
+    let now = cora-cowork_common::now_ms();
+    let dir = std::env::temp_dir().join(format!("cora-cowork-cron-test-{}", cora-cowork_common::generate_short_id()));
     std::fs::create_dir(&dir).unwrap();
     let workspace = dir.join("Archive ");
     std::fs::create_dir(&workspace).unwrap();
 
     cron_repo
-        .insert(&cora_cowork_db::models::CronJobRow {
+        .insert(&cora-cowork_db::models::CronJobRow {
             id: "cron_whitespace_workspace".into(),
             name: "Legacy Workspace".into(),
             enabled: true,
@@ -1029,7 +1029,7 @@ async fn sc6_cron_with_timezone() {
     });
 
     let data = create_job(&mut app, &token, &csrf, body).await;
-    let now = cora_cowork_common::now_ms();
+    let now = cora-cowork_common::now_ms();
     assert!(data["state"]["next_run_at_ms"].as_i64().unwrap() > now);
 }
 

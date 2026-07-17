@@ -136,32 +136,32 @@ mod tests {
         // of future migration-002 edits has an explicit contract decision
         // point instead of a hidden assumption.
         let documented_non_contract_reads = [
-            ("messages", "hidden", "CoraUi v22 adds it before v23-v26 issue path"),
+            ("messages", "hidden", "Cora v22 adds it before v23-v26 issue path"),
             (
                 "conversations",
                 "source",
-                "CoraUi v8 baseline before v23-v26 issue path",
+                "Cora v8 baseline before v23-v26 issue path",
             ),
             (
                 "conversations",
                 "channel_chat_id",
-                "CoraUi v14 baseline before v23-v26 issue path",
+                "Cora v14 baseline before v23-v26 issue path",
             ),
-            ("mailbox", "files", "CoraUi v25 adds it on the observed v23->v26 path"),
+            ("mailbox", "files", "Cora v25 adds it on the observed v23->v26 path"),
             (
                 "remote_agents",
                 "allow_insecure",
-                "CoraUi v18 baseline before v23-v26 issue path",
+                "Cora v18 baseline before v23-v26 issue path",
             ),
             (
                 "cron_jobs",
                 "execution_mode",
-                "CoraUi v22 baseline before v23-v26 issue path",
+                "Cora v22 baseline before v23-v26 issue path",
             ),
             (
                 "cron_jobs",
                 "agent_config",
-                "CoraUi v22 baseline before v23-v26 issue path",
+                "Cora v22 baseline before v23-v26 issue path",
             ),
         ];
 

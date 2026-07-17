@@ -1,10 +1,10 @@
 ﻿---
 name: cora-cowork-troubleshooting
 description: >-
-  Diagnose a running CoraUi installation: inspect stuck or errored conversations, read provider health, scheduled task state, MCP server health, team member state, backend health, and coracore logs. Use when the user reports CoraUi is misbehaving, a conversation is stuck, an LLM/provider call is failing, a scheduled task did not run, an MCP server has no tools, a team member is hung, or they ask to troubleshoot CoraUi.
+  Diagnose a running Cora installation: inspect stuck or errored conversations, read provider health, scheduled task state, MCP server health, team member state, backend health, and coracore logs. Use when the user reports Cora is misbehaving, a conversation is stuck, an LLM/provider call is failing, a scheduled task did not run, an MCP server has no tools, a team member is hung, or they ask to troubleshoot Cora.
 ---
 
-# CoraUi Troubleshooting
+# Cora Troubleshooting
 
 Use the bundled `coracore diagnose` CLI for read-only troubleshooting. It uses
 the runtime context injected into the current agent conversation, so do not
@@ -19,7 +19,7 @@ content, use the user's language.
 2. Start with `diagnose overview` for broad "what is wrong" requests.
 3. Use named diagnose commands first. Use `diagnose http get` only when no named
    command covers the diagnostic need.
-4. Treat every command as read-only. To change CoraUi configuration, use the
+4. Treat every command as read-only. To change Cora configuration, use the
    separate `cora-cowork-config` skill.
 5. Never print raw provider, MCP header, token, password, or secret values. The
    CLI redacts known secret fields by default, but summarize sensitive findings
@@ -55,7 +55,7 @@ runtime context.
 
 ## Start Wide
 
-For a vague "CoraUi is broken" report, run:
+For a vague "Cora is broken" report, run:
 
 ```bash
 "$CORA_COWORK_HELPER_BIN" diagnose overview
@@ -185,7 +185,7 @@ explicitly:
 ```bash
 "$CORA_COWORK_HELPER_BIN" diagnose logs tail <<'JSON'
 {
-  "log_dir": "/Users/alex/Library/Logs/CoraUi",
+  "log_dir": "/Users/alex/Library/Logs/Cora",
   "lines": 100,
   "errors_only": true,
   "conversation_id": "conv_123"

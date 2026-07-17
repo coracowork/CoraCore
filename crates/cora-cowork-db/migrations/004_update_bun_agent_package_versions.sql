@@ -1,6 +1,6 @@
 ﻿-- Migration 004: Update builtin bun-launched ACP package pins.
 --
--- Keep these as exact versions rather than `latest` so one CoraUi release
+-- Keep these as exact versions rather than `latest` so one Cora release
 -- remains reproducible across installs and restarts.
 
 -- Claude Code (2d23ff1c)

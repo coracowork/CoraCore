@@ -32,6 +32,68 @@ pub(super) fn corars_engine_error_to_send_error(error: &CorarsAgentError) -> Age
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(super) struct CorarsRuntimeErrorSummary {
+    pub(super) kind: &'static str,
+    pub(super) provider_error_class: Option<&'static str>,
+    pub(super) http_status: Option<u16>,
+    pub(super) failure_count: Option<usize>,
+    pub(super) failure_limit: Option<usize>,
+}
+
+impl CorarsRuntimeErrorSummary {
+    fn new(kind: &'static str, provider_error_class: Option<&'static str>) -> Self {
+        Self {
+            kind,
+            provider_error_class,
+            http_status: None,
+            failure_count: None,
+            failure_limit: None,
+        }
+    }
+}
+
+pub(super) fn corars_runtime_error_summary(error: &CorarsAgentError) -> CorarsRuntimeErrorSummary {
+    match error {
+        CorarsAgentError::Provider(ProviderError::Api { status, .. }) => CorarsRuntimeErrorSummary {
+            http_status: Some(*status),
+            ..CorarsRuntimeErrorSummary::new("provider", Some("http_status"))
+        },
+        CorarsAgentError::Provider(ProviderError::Connection(_) | ProviderError::Http(_)) => {
+            CorarsRuntimeErrorSummary::new("provider", Some("network"))
+        }
+        CorarsAgentError::Provider(ProviderError::RateLimited { .. }) => CorarsRuntimeErrorSummary {
+            http_status: Some(429),
+            ..CorarsRuntimeErrorSummary::new("provider", Some("rate_limited"))
+        },
+        CorarsAgentError::Provider(ProviderError::PromptTooLong(_)) => {
+            CorarsRuntimeErrorSummary::new("provider", Some("context_too_large"))
+        }
+        CorarsAgentError::Provider(ProviderError::Parse(_)) => {
+            CorarsRuntimeErrorSummary::new("provider", Some("parse"))
+        }
+        CorarsAgentError::ToolCallFailures { count, limit } => CorarsRuntimeErrorSummary {
+            kind: "tool_call_failures",
+            provider_error_class: None,
+            http_status: None,
+            failure_count: Some(*count),
+            failure_limit: Some(*limit),
+        },
+        CorarsAgentError::ToolCallMalformed { count, limit } => CorarsRuntimeErrorSummary {
+            kind: "tool_call_malformed",
+            provider_error_class: None,
+            http_status: None,
+            failure_count: Some(*count),
+            failure_limit: Some(*limit),
+        },
+        CorarsAgentError::ContextTooLong { .. } => {
+            CorarsRuntimeErrorSummary::new("context_too_large", Some("context_too_large"))
+        }
+        CorarsAgentError::ApiError(_) => CorarsRuntimeErrorSummary::new("api_error", None),
+        CorarsAgentError::UserAborted => CorarsRuntimeErrorSummary::new("user_aborted", None),
+    }
+}
+
 fn corars_provider_error_to_send_error(error: &ProviderError, detail: String) -> AgentSendError {
     match error {
         ProviderError::Api { status, .. } => corars_provider_status_to_send_error(*status, detail),
@@ -207,197 +269,5 @@ fn tool_call_failure_send_error(detail: String) -> AgentSendError {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn corars_structured_malformed_tool_call_error_is_provider_error() {
-        let error = CorarsAgentError::ToolCallMalformed { count: 3, limit: 3 };
-        let send_error = corars_engine_error_to_send_error(&error);
-
-        assert_eq!(
-            send_error.code(),
-            Some(cora_cowork_api_types::AgentErrorCode::UserLlmProviderInvalidRequest)
-        );
-        assert_eq!(
-            send_error.ownership(),
-            Some(cora_cowork_api_types::AgentErrorOwnership::UserLlmProvider)
-        );
-        assert_eq!(send_error.stream_error().retryable, Some(false));
-    }
-
-    #[test]
-    fn corars_provider_rate_limited_appends_response_body_to_detail() {
-        let error = CorarsAgentError::Provider(ProviderError::RateLimited {
-            retry_after_ms: 5000,
-            body: Some(
-                r#"{"error":{"code":"insufficient_quota","message":"You exceeded your current quota"}}"#.to_owned(),
-            ),
-        });
-        let send_error = corars_engine_error_to_send_error(&error);
-
-        assert_eq!(
-            send_error.code(),
-            Some(cora_cowork_api_types::AgentErrorCode::UserLlmProviderRateLimited)
-        );
-        let detail = send_error
-            .stream_error()
-            .detail
-            .as_deref()
-            .expect("rate-limited errors must carry a detail");
-        assert!(
-            detail.contains("Provider response: "),
-            "detail should include the provider body marker; got: {detail}"
-        );
-        assert!(
-            detail.contains("insufficient_quota"),
-            "detail should surface the raw provider signal; got: {detail}"
-        );
-    }
-
-    #[test]
-    fn corars_provider_rate_limited_without_body_falls_back_to_bare_detail() {
-        let error = CorarsAgentError::Provider(ProviderError::RateLimited {
-            retry_after_ms: 5000,
-            body: None,
-        });
-        let send_error = corars_engine_error_to_send_error(&error);
-
-        let detail = send_error
-            .stream_error()
-            .detail
-            .as_deref()
-            .expect("rate-limited errors must carry a detail");
-        assert!(
-            !detail.contains("Provider response:"),
-            "detail must not add the body marker when body is absent; got: {detail}"
-        );
-        assert!(
-            detail.contains("Rate limited"),
-            "detail should still include the base message; got: {detail}"
-        );
-    }
-
-    #[test]
-    fn corars_provider_rate_limited_ignores_whitespace_only_body() {
-        let error = CorarsAgentError::Provider(ProviderError::RateLimited {
-            retry_after_ms: 5000,
-            body: Some("   \n\t  ".to_owned()),
-        });
-        let send_error = corars_engine_error_to_send_error(&error);
-
-        let detail = send_error
-            .stream_error()
-            .detail
-            .as_deref()
-            .expect("rate-limited errors must carry a detail");
-        assert!(
-            !detail.contains("Provider response:"),
-            "whitespace-only body should be treated as absent; got: {detail}"
-        );
-    }
-
-    #[test]
-    fn corars_provider_connection_error_is_user_llm_provider_error() {
-        let error = CorarsAgentError::Provider(ProviderError::Connection(
-            "Signable request error: failed to create canonical request".to_owned(),
-        ));
-        let send_error = corars_engine_error_to_send_error(&error);
-
-        assert_eq!(
-            send_error.code(),
-            Some(cora_cowork_api_types::AgentErrorCode::UserLlmProviderNetworkError)
-        );
-        assert_eq!(
-            send_error.ownership(),
-            Some(cora_cowork_api_types::AgentErrorOwnership::UserLlmProvider)
-        );
-        assert_eq!(send_error.stream_error().retryable, Some(true));
-    }
-
-    #[test]
-    fn cora_cowork_api_connection_error_is_user_llm_provider_network_error() {
-        let error = CorarsAgentError::Provider(ProviderError::Connection("error decoding response body".to_owned()));
-        let send_error = corars_engine_error_to_send_error(&error);
-
-        assert_eq!(
-            send_error.code(),
-            Some(cora_cowork_api_types::AgentErrorCode::UserLlmProviderNetworkError)
-        );
-        assert_eq!(
-            send_error.ownership(),
-            Some(cora_cowork_api_types::AgentErrorOwnership::UserLlmProvider)
-        );
-        assert_eq!(send_error.stream_error().retryable, Some(true));
-    }
-
-    #[test]
-    fn corars_provider_status_error_uses_status_instead_of_message_text() {
-        let error = CorarsAgentError::Provider(ProviderError::Api {
-            status: 401,
-            message: "credentials failed".to_owned(),
-        });
-        let send_error = corars_engine_error_to_send_error(&error);
-
-        assert_eq!(
-            send_error.code(),
-            Some(cora_cowork_api_types::AgentErrorCode::UserLlmProviderAuthFailed)
-        );
-        assert_eq!(
-            send_error.ownership(),
-            Some(cora_cowork_api_types::AgentErrorOwnership::UserLlmProvider)
-        );
-        assert_eq!(send_error.stream_error().retryable, Some(false));
-    }
-
-    #[test]
-    fn corars_context_too_long_is_provider_context_error() {
-        let error = CorarsAgentError::ContextTooLong {
-            input_tokens: 120_000,
-            limit: 100_000,
-        };
-        let send_error = corars_engine_error_to_send_error(&error);
-
-        assert_eq!(
-            send_error.code(),
-            Some(cora_cowork_api_types::AgentErrorCode::UserLlmProviderContextTooLarge)
-        );
-        assert_eq!(
-            send_error.ownership(),
-            Some(cora_cowork_api_types::AgentErrorOwnership::UserLlmProvider)
-        );
-        assert_eq!(send_error.stream_error().retryable, Some(false));
-    }
-
-    #[test]
-    fn corars_repeated_malformed_tool_call_is_user_llm_provider_error() {
-        let error = CorarsAgentError::ToolCallMalformed { count: 3, limit: 3 };
-        let send_error = corars_engine_error_to_send_error(&error);
-
-        assert_eq!(
-            send_error.code(),
-            Some(cora_cowork_api_types::AgentErrorCode::UserLlmProviderInvalidRequest)
-        );
-        assert_eq!(
-            send_error.ownership(),
-            Some(cora_cowork_api_types::AgentErrorOwnership::UserLlmProvider)
-        );
-        assert_eq!(send_error.stream_error().retryable, Some(false));
-    }
-
-    #[test]
-    fn corars_tool_call_failures_are_unknown_upstream_error() {
-        let error = CorarsAgentError::ToolCallFailures { count: 3, limit: 3 };
-        let send_error = corars_engine_error_to_send_error(&error);
-
-        assert_eq!(
-            send_error.code(),
-            Some(cora_cowork_api_types::AgentErrorCode::UnknownUpstreamError)
-        );
-        assert_eq!(
-            send_error.ownership(),
-            Some(cora_cowork_api_types::AgentErrorOwnership::UnknownUpstream)
-        );
-        assert_eq!(send_error.stream_error().retryable, Some(true));
-    }
-}
+#[path = "error_test.rs"]
+mod error_test;

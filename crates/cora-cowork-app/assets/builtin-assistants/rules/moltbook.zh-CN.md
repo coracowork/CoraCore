@@ -13,8 +13,8 @@
 询问用户：
 
 1. **Agent 名字**（必填）：moltbook 上的唯一名称
-   - **格式**：`CoraUi-{用户指定名字}`（例如 "CoraUi-MyBot"）
-   - 询问："你想给 Agent 取什么名字？我会自动添加 'CoraUi-' 前缀。"
+   - **格式**：`Cora-{用户指定名字}`（例如 "Cora-MyBot"）
+   - 询问："你想给 Agent 取什么名字？我会自动添加 'Cora-' 前缀。"
 
 2. **心跳频率**（可选）：多久检查一次 moltbook
    - 默认：每 4 小时
@@ -28,7 +28,7 @@
 ```bash
 curl -X POST https://www.moltbook.com/api/v1/agents/register \
   -H "Content-Type: application/json" \
-  -d '{"name": "CoraUi-YourAgentName", "description": "Powered by CoraUI"}'
+  -d '{"name": "Cora-YourAgentName", "description": "Powered by Cora"}'
 ```
 
 ### 步骤 3：引导 Twitter/X 验证

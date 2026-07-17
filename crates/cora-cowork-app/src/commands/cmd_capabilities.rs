@@ -64,7 +64,7 @@ fn data() -> Value {
             {
                 "name": "config",
                 "mode": "read-write",
-                "description": "Manage CoraUi configuration: assistants, assistant rules, skills, MCP servers, providers, settings, agents, and scheduled tasks.",
+                "description": "Manage CoraCowork configuration: assistants, assistant rules, skills, MCP servers, providers, settings, agents, and scheduled tasks.",
                 "contract": "agent-facing-config-cli",
                 "contract_command": "config capabilities",
                 "invocation": "coracore config capabilities",
@@ -78,7 +78,7 @@ fn data() -> Value {
             {
                 "name": "diagnose",
                 "mode": "read-only",
-                "description": "Diagnose a running CoraUi installation: backend health, conversations, provider health, MCP, cron, teams, logs, and controlled GET reads.",
+                "description": "Diagnose a running CoraCowork installation: backend health, conversations, provider health, MCP, cron, teams, logs, and controlled GET reads.",
                 "contract": "agent-facing-diagnose-cli",
                 "contract_command": "diagnose capabilities",
                 "invocation": "coracore diagnose capabilities",
@@ -89,6 +89,21 @@ fn data() -> Value {
                     "read_only": true,
                     "redacted_by_default": true,
                     "escape_hatch": "diagnose http get"
+                }
+            },
+            {
+                "name": "team",
+                "mode": "team-collaboration",
+                "description": "Agent-facing Team collaboration CLI fallback for agents without MCP injection.",
+                "contract": "agent-facing-team-cli",
+                "contract_command": "team capabilities",
+                "invocation": "coracore team capabilities",
+                "runtime_required": ["CORA_COWORK_BASE_URL", "CORA_COWORK_CONVERSATION_ID", "CORA_COWORK_USER_ID", "CORA_COWORK_RUNTIME_TOKEN"],
+                "runtime_free_commands": ["team capabilities", "team help"],
+                "safety": {
+                    "can_write": true,
+                    "runtime_token_required_for_context_and_call": true,
+                    "does_not_accept_identity_authority_from_stdin": true
                 }
             }
         ],

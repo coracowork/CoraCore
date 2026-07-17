@@ -25,7 +25,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.2.4"
+version = "0.2.5"
 edition = "2024"
 license = "MIT"
 
@@ -53,12 +53,12 @@ cora-cowork-cron = { path = "crates/cora-cowork-cron" }
 cora-cowork-assistant = { path = "crates/cora-cowork-assistant" }
 cora-cowork-app = { path = "crates/cora-cowork-app" }
 
-cora-agent = { package = "cora-agent", git = "https://github.com/coracowork/corars.git", tag = "v0.2.4" }
-cora-providers = { package = "cora-providers", git = "https://github.com/coracowork/corars.git", tag = "v0.2.4" }
-cora-types = { package = "cora-types", git = "https://github.com/coracowork/corars.git", tag = "v0.2.4" }
-cora-protocol = { package = "cora-protocol", git = "https://github.com/coracowork/corars.git", tag = "v0.2.4" }
-cora-config = { package = "cora-config", git = "https://github.com/coracowork/corars.git", tag = "v0.2.4" }
-cora-mcp = { package = "cora-mcp", git = "https://github.com/coracowork/corars.git", tag = "v0.2.4" }
+cora-agent = { git = "https://github.com/coracowork/corars.git", tag = "v0.2.5" }
+cora-providers = { git = "https://github.com/coracowork/corars.git", tag = "v0.2.5" }
+cora-types = { git = "https://github.com/coracowork/corars.git", tag = "v0.2.5" }
+cora-protocol = { git = "https://github.com/coracowork/corars.git", tag = "v0.2.5" }
+cora-config = { git = "https://github.com/coracowork/corars.git", tag = "v0.2.5" }
+cora-mcp = { git = "https://github.com/coracowork/corars.git", tag = "v0.2.5" }
 
 # Core framework
 tokio = { version = "1", features = ["full"] }

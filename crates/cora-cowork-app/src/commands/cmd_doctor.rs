@@ -1,4 +1,4 @@
-﻿//! `aioncore doctor` subcommand: agent CLI detection self-check.
+﻿//! `coracore doctor` subcommand: agent CLI detection self-check.
 //!
 //! Hydrates the agent registry against the real on-disk database and
 //! prints a per-agent availability table to stdout. Mirrors the
@@ -7,7 +7,7 @@
 //! does for the server, so managed runtimes and CLI commands resolve
 //! through the same paths the server uses.
 //!
-//! Writes to stdout (not the rolling aioncore.log) — the user
+//! Writes to stdout (not the rolling coracore.log) — the user
 //! typically runs `doctor` interactively after reporting "no agent
 //! works", and the answer needs to be visible in their terminal
 //! without grepping logs. We deliberately skip `init_environment` to
@@ -68,7 +68,7 @@ fn doctor_registry_hydrate_error() -> CliBoundaryError {
 
 fn print_environment(merged_path: &str, data_dir: &Path) {
     let path_segments = merged_path.split(if cfg!(windows) { ';' } else { ':' }).count();
-    println!("CoraCowork backend doctor — agent CLI detection self-check");
+    println!("Cora-Cowork backend doctor — agent CLI detection self-check");
     println!("  data-dir       : {}", data_dir.display());
     println!("  PATH segments  : {path_segments}");
     println!("  PATH length    : {}", merged_path.len());

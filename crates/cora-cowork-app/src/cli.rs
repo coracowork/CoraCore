@@ -4,6 +4,7 @@
 //! attribute soup) from the runtime entry point. Visibility is `pub(crate)`
 //! because only `main.rs` consumes it.
 
+use std::ffi::OsString;
 use std::path::PathBuf;
 
 use clap::{Args, Parser, Subcommand, ValueEnum};
@@ -91,6 +92,8 @@ pub(crate) enum Command {
     Config(ConfigArgs),
     /// Agent-facing read-only troubleshooting CLI for CoraCowork diagnosis.
     Diagnose(DiagnoseArgs),
+    /// Agent-facing Team collaboration CLI fallback.
+    Team(TeamArgs),
     /// Stdio ↔ TCP bridge for the team MCP server (spawned by the ACP agent CLI).
     McpBridge,
     /// MCP stdio server for team tools (spawned by the ACP agent CLI).
@@ -111,6 +114,7 @@ impl Command {
             Self::Capabilities => "capabilities",
             Self::Config(_) => "config",
             Self::Diagnose(_) => "diagnose",
+            Self::Team(_) => "team",
             Self::McpBridge => "mcp-bridge",
             Self::McpTeamStdio => "mcp-team-stdio",
             Self::Doctor => "doctor",
@@ -133,6 +137,45 @@ pub(crate) struct ConfigArgs {
 pub(crate) struct DiagnoseArgs {
     #[command(subcommand)]
     pub command: DiagnoseCommand,
+}
+
+#[derive(Args, Debug, Clone)]
+#[command(disable_help_subcommand = true)]
+pub(crate) struct TeamArgs {
+    #[command(subcommand)]
+    pub command: TeamCommand,
+}
+
+#[derive(Subcommand, Debug, Clone)]
+pub(crate) enum TeamCommand {
+    Capabilities,
+    Help,
+    Context,
+    Members,
+    SendMessage,
+    Task(TeamTaskArgs),
+    ListAssistants,
+    DescribeAssistant,
+    SpawnAgent,
+    RenameAgent,
+    ShutdownAgent,
+    #[command(external_subcommand)]
+    Unknown(Vec<OsString>),
+}
+
+#[derive(Args, Debug, Clone)]
+pub(crate) struct TeamTaskArgs {
+    #[command(subcommand)]
+    pub command: TeamTaskCommand,
+}
+
+#[derive(Subcommand, Debug, Clone)]
+pub(crate) enum TeamTaskCommand {
+    Create,
+    Update,
+    List,
+    #[command(external_subcommand)]
+    Unknown(Vec<OsString>),
 }
 
 #[derive(Subcommand, Debug, Clone)]
@@ -738,6 +781,30 @@ mod tests {
             &["coracore", "config", "skills", "external-paths", "remove"],
             &["coracore", "config", "skills", "market", "enable"],
             &["coracore", "config", "skills", "market", "disable"],
+        ];
+
+        for command in commands {
+            let result = Cli::try_parse_from(*command);
+            assert!(result.is_ok(), "command should parse: {command:?}");
+        }
+    }
+
+    #[test]
+    fn team_cli_accepts_agent_facing_command_paths() {
+        let commands: &[&[&str]] = &[
+            &["coracore", "team", "capabilities"],
+            &["coracore", "team", "help"],
+            &["coracore", "team", "context"],
+            &["coracore", "team", "members"],
+            &["coracore", "team", "send-message"],
+            &["coracore", "team", "task", "create"],
+            &["coracore", "team", "task", "update"],
+            &["coracore", "team", "task", "list"],
+            &["coracore", "team", "list-assistants"],
+            &["coracore", "team", "describe-assistant"],
+            &["coracore", "team", "spawn-agent"],
+            &["coracore", "team", "rename-agent"],
+            &["coracore", "team", "shutdown-agent"],
         ];
 
         for command in commands {
