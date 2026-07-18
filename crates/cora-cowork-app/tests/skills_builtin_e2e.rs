@@ -9,10 +9,10 @@ mod common;
 
 use std::sync::Arc;
 
+use axum::http::StatusCode;
 use cora_cowork_app::{ModuleStates, build_module_states, create_router_with_states};
 use cora_cowork_db::init_database_memory;
 use cora_cowork_extension::{ExternalPathsManager, SkillPaths, SkillRouterState};
-use axum::http::StatusCode;
 use serde_json::{Value, json};
 use tempfile::TempDir;
 use tower::ServiceExt;
@@ -50,9 +50,13 @@ async fn fixture_embedded() -> Fixture {
 
     // Materialize the embedded corpus onto the temp data dir so the
     // per-test router can read it just like production would.
-    cora_cowork_extension::materialize_if_needed(&data_dir, cora_cowork_extension::builtin_skills_corpus(), "test-fixture")
-        .await
-        .expect("failed to materialize embedded builtin skills for test fixture");
+    cora_cowork_extension::materialize_if_needed(
+        &data_dir,
+        cora_cowork_extension::builtin_skills_corpus(),
+        "test-fixture",
+    )
+    .await
+    .expect("failed to materialize embedded builtin skills for test fixture");
 
     let db = init_database_memory().await.unwrap();
     let services = cora_cowork_app::AppServices::from_config(db, &cora_cowork_app::AppConfig::default())
@@ -73,7 +77,9 @@ async fn fixture_embedded() -> Fixture {
         assistant_skills_dir: data_dir.join("assistant-skills"),
     };
     let ext_paths_mgr = Arc::new(ExternalPathsManager::with_file(data_dir.join("paths.json")).await);
-    let skill_repo = Arc::new(cora_cowork_db::SqliteSkillRepository::new(services.database.pool().clone()));
+    let skill_repo = Arc::new(cora_cowork_db::SqliteSkillRepository::new(
+        services.database.pool().clone(),
+    ));
     states.skill = SkillRouterState {
         skill_paths,
         skill_repo: skill_repo.clone(),

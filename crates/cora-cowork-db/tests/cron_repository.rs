@@ -1,4 +1,4 @@
-﻿//! Black-box integration tests for `ICronRepository`.
+//! Black-box integration tests for `ICronRepository`.
 //!
 //! Tests exercise the repository trait interface without knowledge of
 //! the underlying SQLite implementation details.

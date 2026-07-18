@@ -105,6 +105,9 @@ mod tests {
             data_dir: PathBuf::from("/tmp/cora-cowork"),
             ..Default::default()
         };
-        assert_eq!(config.database_path(), PathBuf::from("/tmp/cora-cowork/cora-cowork-backend.db"));
+        assert_eq!(
+            config.database_path(),
+            PathBuf::from("/tmp/cora-cowork/cora-cowork-backend.db")
+        );
     }
 }

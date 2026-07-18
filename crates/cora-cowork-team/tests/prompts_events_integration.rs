@@ -3,6 +3,8 @@ mod common;
 use std::collections::HashSet;
 use std::sync::Arc;
 
+use async_trait::async_trait;
+use common::MockTeamRepo;
 use cora_cowork_api_types::{
     TeamAgentRemovedPayload, TeamAgentRenamedPayload, TeamAgentSpawnedPayload, TeamAgentStatusPayload, WebSocketMessage,
 };
@@ -19,8 +21,6 @@ use cora_cowork_team::types::{
 };
 use cora_cowork_team::visibility::TeamVisibilityPolicy;
 use cora_cowork_team::{Mailbox, TaskBoard, TeammateManager};
-use async_trait::async_trait;
-use common::MockTeamRepo;
 
 // ---------------------------------------------------------------------------
 // Test helpers

@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use async_trait::async_trait;
 use cora_cowork_ai_agent::IWorkerTaskManager;
 use cora_cowork_api_types::{AssistantConversationRequest, CreateConversationRequest, GetConfigOptionsResponse};
 use cora_cowork_conversation::{
@@ -14,7 +15,6 @@ use cora_cowork_team::{
     TeamConversationCreateResult, TeamConversationLookupPort, TeamConversationProvisioningPort, TeamError,
     TeamProjectionMessageStore,
 };
-use async_trait::async_trait;
 use tracing::info;
 
 pub struct TeamConversationAdapters {

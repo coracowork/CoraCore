@@ -16,7 +16,7 @@ use cora_cowork_db::{IProviderRepository, models::Provider};
 use regex::Regex;
 use tracing::{info, warn};
 
-use crate::factory::corars::{map_corars_provider, resolve_corars_url_and_compat, resolve_bedrock_config};
+use crate::factory::corars::{map_corars_provider, resolve_bedrock_config, resolve_corars_url_and_compat};
 use crate::types::CorarsResolvedConfig;
 
 const HEALTH_CHECK_TIMEOUT: Duration = Duration::from_secs(30);

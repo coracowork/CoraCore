@@ -201,6 +201,7 @@ impl ITeamRepository for MockTeamRepo {
 pub(crate) mod workspace_harness {
     use std::sync::{Arc, Mutex};
 
+    use async_trait::async_trait;
     use cora_cowork_ai_agent::{AgentError, IWorkerTaskManager};
     use cora_cowork_api_types::{
         AcpConfigOptionDto, AcpConfigSelectOptionDto, CreateTeamRequest, GetConfigOptionsResponse, WebSocketMessage,
@@ -217,7 +218,6 @@ pub(crate) mod workspace_harness {
         MessagePageResult, MessageRowUpdate, MessageSearchRow, UpdateTeamParams,
     };
     use cora_cowork_realtime::EventBroadcaster;
-    use async_trait::async_trait;
 
     use crate::ports::{
         AgentTurnCancellationPort, AgentTurnExecutionError, AgentTurnExecutionPort, AgentTurnOutcome, AgentTurnRequest,

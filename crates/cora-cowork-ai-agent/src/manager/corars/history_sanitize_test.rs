@@ -1,4 +1,4 @@
-﻿use super::*;
+use super::*;
 use cora_types::message::{Message, Role};
 use serde_json::json;
 

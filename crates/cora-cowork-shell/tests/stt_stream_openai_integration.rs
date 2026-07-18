@@ -12,10 +12,10 @@
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
+use base64::Engine as _;
 use cora_cowork_api_types::{OpenAISpeechToTextConfig, SpeechToTextConfig, SpeechToTextProvider};
 use cora_cowork_shell::stt_stream_openai::{self, OpenAIRealtimeStream};
 use cora_cowork_shell::{OpenAIRealtimeUpstreamFactory, SttError, UpstreamEvent, UpstreamFactory, UpstreamStream};
-use base64::Engine as _;
 use futures_util::{SinkExt, StreamExt};
 use tokio::net::{TcpListener, TcpStream};
 use tokio_tungstenite::WebSocketStream;

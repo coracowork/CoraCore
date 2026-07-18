@@ -1,4 +1,4 @@
-﻿//! SQLite-backed assistant repositories.
+//! SQLite-backed assistant repositories.
 
 use cora_cowork_common::{TimestampMs, now_ms};
 use sqlx::SqlitePool;

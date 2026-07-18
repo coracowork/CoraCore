@@ -1,5 +1,5 @@
-﻿use cora_types::message::ContentBlock;
 use cora_cowork_common::constants::CORA_COWORK_FILES_MARKER;
+use cora_types::message::ContentBlock;
 
 use super::build_content_blocks;
 

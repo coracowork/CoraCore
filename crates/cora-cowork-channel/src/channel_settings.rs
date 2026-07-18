@@ -1,4 +1,4 @@
-﻿use std::sync::Arc;
+use std::sync::Arc;
 
 use cora_cowork_api_types::{
     ChannelAssistantSettingRequest, ChannelAssistantSettingResponse, ChannelDefaultModelSetting,

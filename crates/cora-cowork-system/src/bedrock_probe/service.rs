@@ -1,7 +1,7 @@
 use std::time::Duration;
 
-use cora_cowork_api_types::{BedrockAuthMethod, BedrockConfig};
 use aws_sdk_bedrock::config::Credentials;
+use cora_cowork_api_types::{BedrockAuthMethod, BedrockConfig};
 use tracing::{info, warn};
 
 use crate::error::SystemError;

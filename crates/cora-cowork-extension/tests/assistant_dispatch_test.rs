@@ -1,4 +1,4 @@
-﻿//! Integration coverage for the `/api/skills/assistant-rule/*` and
+//! Integration coverage for the `/api/skills/assistant-rule/*` and
 //! `/api/skills/assistant-skill/*` source dispatch introduced by T1b.
 //!
 //! Exercises the three dispatch paths (builtin → assets, extension → empty,
@@ -8,14 +8,14 @@
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
+use axum::body::Body;
+use axum::http::{Request, StatusCode};
 use cora_cowork_api_types::{ApiResponse, AssistantSource, SkillImportLimitsResponse};
 use cora_cowork_extension::classifier::{AssistantClassifier, AssistantRuleDispatcher};
 use cora_cowork_extension::error::ExtensionError;
 use cora_cowork_extension::external_paths::ExternalPathsManager;
 use cora_cowork_extension::skill_routes::{SkillRouterState, skill_routes};
 use cora_cowork_extension::skill_service::SkillPaths;
-use axum::body::Body;
-use axum::http::{Request, StatusCode};
 use http_body_util::BodyExt;
 use tower::ServiceExt;
 

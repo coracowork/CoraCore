@@ -1,8 +1,12 @@
-﻿//! Agent-readable capability contract for `coracore diagnose`.
+//! Agent-readable capability contract for `coracore diagnose`.
 
 use serde_json::{Value, json};
 
-const RUNTIME_ENV: [&str; 3] = ["CORA_COWORK_BASE_URL", "CORA_COWORK_CONVERSATION_ID", "CORA_COWORK_USER_ID"];
+const RUNTIME_ENV: [&str; 3] = [
+    "CORA_COWORK_BASE_URL",
+    "CORA_COWORK_CONVERSATION_ID",
+    "CORA_COWORK_USER_ID",
+];
 
 pub(crate) fn data() -> Value {
     json!({

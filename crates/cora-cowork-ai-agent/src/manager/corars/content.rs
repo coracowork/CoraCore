@@ -1,5 +1,7 @@
-﻿use cora_types::message::ContentBlock;
+#![allow(dead_code)]
+
 use cora_cowork_common::constants::CORA_COWORK_FILES_MARKER;
+use cora_types::message::ContentBlock;
 
 const ATTACHED_FILES_HEADER: &str = "[Attached files]";
 

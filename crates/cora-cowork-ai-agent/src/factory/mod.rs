@@ -2,8 +2,8 @@ pub mod acp_assembler;
 
 mod acp;
 mod acp_launch_policy;
-pub(crate) mod corars;
 mod context;
+pub(crate) mod corars;
 
 use std::path::PathBuf;
 use std::sync::Arc;

@@ -1,4 +1,4 @@
-﻿//! SQLite-backed agent metadata repository.
+//! SQLite-backed agent metadata repository.
 
 use cora_cowork_common::now_ms;
 use sqlx::{Row, SqlitePool, sqlite::SqliteRow};

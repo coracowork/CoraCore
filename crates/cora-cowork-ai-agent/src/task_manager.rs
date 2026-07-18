@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
+use async_trait::async_trait;
 use cora_cowork_common::{
     AgentKillReason, AgentType, ConversationStatus, ErrorChain, OnConversationDelete, TimestampMs, now_ms,
 };
-use async_trait::async_trait;
 use dashmap::DashMap;
 use futures_util::future::{BoxFuture, join_all};
 use tokio::sync::OnceCell;
@@ -13,7 +13,7 @@ use crate::active_lease::ActiveLeaseRegistry;
 use crate::agent_task::AgentInstance;
 use crate::error::AgentError;
 use crate::runtime_token::{RuntimeTokenScope, RuntimeTokenService, TEAM_RUNTIME_TOKEN_SESSION_GENERATION};
-use crate::types::{CORA_COWORK_RUNTIME_TOKEN_ENV, BuildTaskOptions, RuntimeCapabilities};
+use crate::types::{BuildTaskOptions, CORA_COWORK_RUNTIME_TOKEN_ENV, RuntimeCapabilities};
 
 /// Factory function that creates an [`AgentInstance`] from build options.
 ///

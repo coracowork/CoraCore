@@ -1,4 +1,4 @@
-﻿#![allow(clippy::disallowed_types)]
+#![allow(clippy::disallowed_types)]
 
 use axum::Router;
 use axum::extract::rejection::JsonRejection;
@@ -134,7 +134,10 @@ async fn system_resume(
     State(state): State<CronRouterState>,
     headers: HeaderMap,
 ) -> Result<Json<ApiResponse<()>>, ApiError> {
-    let is_internal = headers.get("x-cora-cowork-internal").and_then(|value| value.to_str().ok()) == Some("1");
+    let is_internal = headers
+        .get("x-cora-cowork-internal")
+        .and_then(|value| value.to_str().ok())
+        == Some("1");
     if !is_internal {
         return Err(ApiError::Forbidden("internal route".into()));
     }
@@ -334,7 +337,8 @@ mod tests {
     #[test]
     fn conversation_error_maps_through_boundary_mapper() {
         let err: ApiError =
-            CronError::Conversation(cora_cowork_conversation::ConversationError::NotFound { id: "conv-1".into() }).into();
+            CronError::Conversation(cora_cowork_conversation::ConversationError::NotFound { id: "conv-1".into() })
+                .into();
         assert!(matches!(err, ApiError::NotFound(msg) if msg == "Conversation conv-1 not found"));
     }
 

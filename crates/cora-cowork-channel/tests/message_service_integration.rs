@@ -1,5 +1,6 @@
-﻿use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex};
 
+use async_trait::async_trait;
 use cora_cowork_ai_agent::agent_task::{AgentInstance, IAgentTask};
 use cora_cowork_ai_agent::protocol::events::FinishEventData;
 use cora_cowork_ai_agent::types::{BuildTaskOptions, SendMessageData};
@@ -21,7 +22,6 @@ use cora_cowork_db::{
     SqliteConversationRepository, init_database_memory,
 };
 use cora_cowork_realtime::EventBroadcaster;
-use async_trait::async_trait;
 use tokio::sync::broadcast;
 
 struct TestBroadcaster {

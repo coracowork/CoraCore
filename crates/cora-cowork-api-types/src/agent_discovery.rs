@@ -1,4 +1,4 @@
-﻿//! Unified agent metadata surfaced to the frontend.
+//! Unified agent metadata surfaced to the frontend.
 //!
 //! A single type replaces the previous split of `DetectedAgent` (API
 //! response) and `AgentMetadata` (internal cache): the same shape is

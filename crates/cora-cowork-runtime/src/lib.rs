@@ -1,4 +1,4 @@
-﻿#![warn(clippy::disallowed_types)]
+#![warn(clippy::disallowed_types)]
 
 //! Managed runtime and subprocess infrastructure for coracore.
 

@@ -2986,7 +2986,9 @@ mod tests {
 
     #[async_trait::async_trait]
     impl AssistantAgentCatalogPort for StubAgentCatalog {
-        async fn list_management_agents(&self) -> Result<Vec<cora_cowork_api_types::AgentManagementRow>, AssistantError> {
+        async fn list_management_agents(
+            &self,
+        ) -> Result<Vec<cora_cowork_api_types::AgentManagementRow>, AssistantError> {
             Ok(self.rows.lock().expect("agent rows lock poisoned").clone())
         }
     }
@@ -3435,8 +3437,16 @@ mod tests {
         {
             let mut rows = fx.agent_rows.lock().expect("agent rows lock poisoned");
             *rows = vec![
-                mk_agent_row("agent-dirty", "dirty", cora_cowork_api_types::AgentManagementStatus::Online),
-                mk_agent_row("agent-valid", "valid", cora_cowork_api_types::AgentManagementStatus::Online),
+                mk_agent_row(
+                    "agent-dirty",
+                    "dirty",
+                    cora_cowork_api_types::AgentManagementStatus::Online,
+                ),
+                mk_agent_row(
+                    "agent-valid",
+                    "valid",
+                    cora_cowork_api_types::AgentManagementStatus::Online,
+                ),
             ];
         }
 
@@ -3645,7 +3655,10 @@ mod tests {
             .expect("unchecked agent should be selectable as a generated assistant");
         assert_eq!(bare.source, AssistantSource::Generated);
         assert_eq!(bare.agent_id, "agent-cursor");
-        assert_eq!(bare.agent_status, cora_cowork_api_types::AgentManagementStatus::Unchecked);
+        assert_eq!(
+            bare.agent_status,
+            cora_cowork_api_types::AgentManagementStatus::Unchecked
+        );
         assert!(bare.team_selectable);
         assert!(bare.agent_status_message.is_none());
     }
@@ -4356,7 +4369,11 @@ mod tests {
                     "claude",
                     cora_cowork_api_types::AgentManagementStatus::Online,
                 ),
-                mk_agent_row("agent-codex", "codex", cora_cowork_api_types::AgentManagementStatus::Online),
+                mk_agent_row(
+                    "agent-codex",
+                    "codex",
+                    cora_cowork_api_types::AgentManagementStatus::Online,
+                ),
             ],
             ..Default::default()
         })

@@ -1,4 +1,4 @@
-﻿//! Top-level agent-readable capability index for the `coracore` binary.
+//! Top-level agent-readable capability index for the `coracore` binary.
 
 use std::io::{self, Write};
 use std::process::ExitCode;

@@ -1,4 +1,4 @@
-﻿//! Integration tests for agent type implementations and auxiliary features.
+//! Integration tests for agent type implementations and auxiliary features.
 //!
 //! These tests validate:
 //! - Each agent manager implements IAgentTask correctly
@@ -11,7 +11,7 @@ use std::sync::Arc;
 
 use cora_cowork_ai_agent::manager::corars::CorarsAgentManager;
 use cora_cowork_ai_agent::task_manager::AgentFactory;
-use cora_cowork_ai_agent::types::{CorarsResolvedConfig, BuildTaskOptions, SendMessageData};
+use cora_cowork_ai_agent::types::{BuildTaskOptions, CorarsResolvedConfig, SendMessageData};
 use cora_cowork_ai_agent::*;
 use cora_cowork_ai_agent::{SkillIndex, build_system_instructions_with_skills_index};
 use cora_cowork_common::{AgentKillReason, AgentType, ConversationStatus, ProviderWithModel, TimestampMs, now_ms};

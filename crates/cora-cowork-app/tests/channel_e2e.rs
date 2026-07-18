@@ -1,14 +1,14 @@
-﻿//! Channel integration E2E tests.
+//! Channel integration E2E tests.
 //!
 //! Covers test-plan §1-5: plugin CRUD, pairing flow, user management,
 //! session management, settings sync.
 
 mod common;
 
+use axum::http::StatusCode;
 use cora_cowork_common::now_ms;
 use cora_cowork_db::models::{AssistantSessionRow, AssistantUserRow};
 use cora_cowork_db::{IChannelRepository, SqliteChannelRepository};
-use axum::http::StatusCode;
 use serde_json::json;
 use tower::ServiceExt;
 

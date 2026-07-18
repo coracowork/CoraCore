@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
+use async_trait::async_trait;
 use cora_cowork_api_types::WebSocketMessage;
 use cora_cowork_db::models::MessageRow;
 use cora_cowork_realtime::EventBroadcaster;
-use async_trait::async_trait;
 use tracing::info;
 
 use crate::error::TeamError;

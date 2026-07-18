@@ -59,7 +59,8 @@ impl McpAgentAdapter for MockAdapter {
 
 async fn make_service(adapters: Vec<Arc<dyn McpAgentAdapter>>) -> McpSyncService {
     let db = cora_cowork_db::init_database_memory().await.unwrap();
-    let repo: Arc<dyn cora_cowork_db::IMcpServerRepository> = Arc::new(SqliteMcpServerRepository::new(db.pool().clone()));
+    let repo: Arc<dyn cora_cowork_db::IMcpServerRepository> =
+        Arc::new(SqliteMcpServerRepository::new(db.pool().clone()));
     McpSyncService::new(repo, adapters)
 }
 

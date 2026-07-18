@@ -659,7 +659,10 @@ mod tests {
 
     #[async_trait::async_trait]
     impl IOAuthTokenRepository for MockTokenRepo {
-        async fn get_by_url(&self, _: &str) -> Result<Option<cora_cowork_db::models::OAuthTokenRow>, cora_cowork_db::DbError> {
+        async fn get_by_url(
+            &self,
+            _: &str,
+        ) -> Result<Option<cora_cowork_db::models::OAuthTokenRow>, cora_cowork_db::DbError> {
             Ok(None)
         }
 
@@ -683,7 +686,10 @@ mod tests {
 
     #[async_trait::async_trait]
     impl IOAuthTokenRepository for IdempotentDeleteRepo {
-        async fn get_by_url(&self, _: &str) -> Result<Option<cora_cowork_db::models::OAuthTokenRow>, cora_cowork_db::DbError> {
+        async fn get_by_url(
+            &self,
+            _: &str,
+        ) -> Result<Option<cora_cowork_db::models::OAuthTokenRow>, cora_cowork_db::DbError> {
             Ok(None)
         }
 
@@ -709,7 +715,10 @@ mod tests {
 
     #[async_trait::async_trait]
     impl IOAuthTokenRepository for ValidTokenRepo {
-        async fn get_by_url(&self, _: &str) -> Result<Option<cora_cowork_db::models::OAuthTokenRow>, cora_cowork_db::DbError> {
+        async fn get_by_url(
+            &self,
+            _: &str,
+        ) -> Result<Option<cora_cowork_db::models::OAuthTokenRow>, cora_cowork_db::DbError> {
             Ok(Some(cora_cowork_db::models::OAuthTokenRow {
                 server_url: "https://example.com".to_string(),
                 access_token: "valid_access_token".to_string(),
@@ -741,7 +750,10 @@ mod tests {
 
     #[async_trait::async_trait]
     impl IOAuthTokenRepository for ExpiredTokenRepo {
-        async fn get_by_url(&self, _: &str) -> Result<Option<cora_cowork_db::models::OAuthTokenRow>, cora_cowork_db::DbError> {
+        async fn get_by_url(
+            &self,
+            _: &str,
+        ) -> Result<Option<cora_cowork_db::models::OAuthTokenRow>, cora_cowork_db::DbError> {
             Ok(Some(cora_cowork_db::models::OAuthTokenRow {
                 server_url: "https://example.com".to_string(),
                 access_token: "expired_token".to_string(),
@@ -773,7 +785,10 @@ mod tests {
 
     #[async_trait::async_trait]
     impl IOAuthTokenRepository for NoExpiryTokenRepo {
-        async fn get_by_url(&self, _: &str) -> Result<Option<cora_cowork_db::models::OAuthTokenRow>, cora_cowork_db::DbError> {
+        async fn get_by_url(
+            &self,
+            _: &str,
+        ) -> Result<Option<cora_cowork_db::models::OAuthTokenRow>, cora_cowork_db::DbError> {
             Ok(Some(cora_cowork_db::models::OAuthTokenRow {
                 server_url: "https://example.com".to_string(),
                 access_token: "no_expiry_token".to_string(),

@@ -1,4 +1,4 @@
-﻿use super::*;
+use super::*;
 
 fn write_file(path: &Path) {
     if let Some(parent) = path.parent() {

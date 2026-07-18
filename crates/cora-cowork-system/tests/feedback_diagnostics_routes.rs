@@ -1,13 +1,13 @@
-﻿use std::sync::Arc;
+use std::sync::Arc;
 
+use axum::body::Body;
+use axum::http::{Request, StatusCode};
 use cora_cowork_auth::CurrentUser;
 use cora_cowork_realtime::BroadcastEventBus;
 use cora_cowork_system::{
     ClientPrefService, FeedbackDiagnosticsService, ModelFetchService, ProtocolDetectionService, ProviderService,
     RuntimePrepareService, SettingsService, SystemRouterState, VersionCheckService, system_routes,
 };
-use axum::body::Body;
-use axum::http::{Request, StatusCode};
 use http_body_util::BodyExt;
 use serde_json::json;
 use tower::ServiceExt;

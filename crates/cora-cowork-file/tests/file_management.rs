@@ -1,4 +1,4 @@
-﻿//! Integration tests for file management operations (task 7.5).
+//! Integration tests for file management operations (task 7.5).
 //!
 //! Covers `copy_files_to_workspace`, `remove_entry`, `rename_entry`, and
 //! `create_temp_file` through the `IFileService` trait, including path
@@ -439,7 +439,10 @@ async fn create_temp_file_path_in_cora_cowork_dir() {
     let svc = make_service(dir.path());
     let path = svc.create_temp_file("check.txt").await.unwrap();
 
-    assert!(path.contains("cora-cowork"), "temp path should be under cora-cowork dir");
+    assert!(
+        path.contains("cora-cowork"),
+        "temp path should be under cora-cowork dir"
+    );
 }
 
 #[tokio::test]

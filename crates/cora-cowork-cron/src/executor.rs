@@ -1,4 +1,4 @@
-﻿use std::path::{Path, PathBuf};
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use cora_cowork_ai_agent::AgentRegistry;
@@ -1220,7 +1220,9 @@ mod tests {
     use cora_cowork_ai_agent::agent_task::{AgentInstance, IAgentTask, IMockAgent};
     use cora_cowork_ai_agent::protocol::events::{FinishEventData, TextEventData};
     use cora_cowork_ai_agent::types::{BuildTaskOptions, SendMessageData};
-    use cora_cowork_api_types::{AgentModeResponse, ConfigOptionConfirmation, SetConfigOptionResponse, WebSocketMessage};
+    use cora_cowork_api_types::{
+        AgentModeResponse, ConfigOptionConfirmation, SetConfigOptionResponse, WebSocketMessage,
+    };
     use cora_cowork_common::{AgentKillReason, ConversationStatus, PaginatedResult, TimestampMs};
     use cora_cowork_db::{
         ConversationArtifactRow, ConversationFilters, ConversationRowUpdate, MessagePageParams, MessagePageResult,
@@ -2360,10 +2362,16 @@ mod tests {
 
         #[async_trait::async_trait]
         impl IConversationRepository for StubConvRepo {
-            async fn get(&self, _id: &str) -> Result<Option<cora_cowork_db::models::ConversationRow>, cora_cowork_db::DbError> {
+            async fn get(
+                &self,
+                _id: &str,
+            ) -> Result<Option<cora_cowork_db::models::ConversationRow>, cora_cowork_db::DbError> {
                 Ok(None)
             }
-            async fn create(&self, _row: &cora_cowork_db::models::ConversationRow) -> Result<(), cora_cowork_db::DbError> {
+            async fn create(
+                &self,
+                _row: &cora_cowork_db::models::ConversationRow,
+            ) -> Result<(), cora_cowork_db::DbError> {
                 Ok(())
             }
             async fn update(&self, _id: &str, _updates: &ConversationRowUpdate) -> Result<(), cora_cowork_db::DbError> {
@@ -2417,10 +2425,17 @@ mod tests {
                     has_more_after: false,
                 })
             }
-            async fn insert_message(&self, _message: &cora_cowork_db::models::MessageRow) -> Result<(), cora_cowork_db::DbError> {
+            async fn insert_message(
+                &self,
+                _message: &cora_cowork_db::models::MessageRow,
+            ) -> Result<(), cora_cowork_db::DbError> {
                 Ok(())
             }
-            async fn update_message(&self, _id: &str, _updates: &MessageRowUpdate) -> Result<(), cora_cowork_db::DbError> {
+            async fn update_message(
+                &self,
+                _id: &str,
+                _updates: &MessageRowUpdate,
+            ) -> Result<(), cora_cowork_db::DbError> {
                 Ok(())
             }
             async fn delete_messages_by_conversation(&self, _conv_id: &str) -> Result<(), cora_cowork_db::DbError> {
@@ -2797,7 +2812,10 @@ mod tests {
 
     #[async_trait::async_trait]
     impl IConversationRepository for ExistingConversationRepo {
-        async fn get(&self, id: &str) -> Result<Option<cora_cowork_db::models::ConversationRow>, cora_cowork_db::DbError> {
+        async fn get(
+            &self,
+            id: &str,
+        ) -> Result<Option<cora_cowork_db::models::ConversationRow>, cora_cowork_db::DbError> {
             Ok(Some(cora_cowork_db::models::ConversationRow {
                 id: id.to_owned(),
                 user_id: "cron".into(),
@@ -2880,7 +2898,10 @@ mod tests {
             })
         }
 
-        async fn insert_message(&self, _message: &cora_cowork_db::models::MessageRow) -> Result<(), cora_cowork_db::DbError> {
+        async fn insert_message(
+            &self,
+            _message: &cora_cowork_db::models::MessageRow,
+        ) -> Result<(), cora_cowork_db::DbError> {
             Ok(())
         }
 
@@ -3001,7 +3022,10 @@ mod tests {
 
     #[async_trait::async_trait]
     impl IConversationRepository for MissingWorkspaceConversationRepo {
-        async fn get(&self, _id: &str) -> Result<Option<cora_cowork_db::models::ConversationRow>, cora_cowork_db::DbError> {
+        async fn get(
+            &self,
+            _id: &str,
+        ) -> Result<Option<cora_cowork_db::models::ConversationRow>, cora_cowork_db::DbError> {
             Ok(Some(self.row.clone()))
         }
 
@@ -3068,7 +3092,10 @@ mod tests {
             })
         }
 
-        async fn insert_message(&self, message: &cora_cowork_db::models::MessageRow) -> Result<(), cora_cowork_db::DbError> {
+        async fn insert_message(
+            &self,
+            message: &cora_cowork_db::models::MessageRow,
+        ) -> Result<(), cora_cowork_db::DbError> {
             self.operations.lock().unwrap().push(format!(
                 "insert_message:{}:{}",
                 message.position.as_deref().unwrap_or("none"),
@@ -3246,7 +3273,10 @@ mod tests {
         async fn list_all(&self) -> Result<Vec<cora_cowork_db::models::AgentMetadataRow>, cora_cowork_db::DbError> {
             Ok(Vec::new())
         }
-        async fn get(&self, _id: &str) -> Result<Option<cora_cowork_db::models::AgentMetadataRow>, cora_cowork_db::DbError> {
+        async fn get(
+            &self,
+            _id: &str,
+        ) -> Result<Option<cora_cowork_db::models::AgentMetadataRow>, cora_cowork_db::DbError> {
             Ok(None)
         }
         async fn find_by_source_and_name(

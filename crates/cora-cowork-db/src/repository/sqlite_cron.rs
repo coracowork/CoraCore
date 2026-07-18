@@ -1,4 +1,4 @@
-﻿use cora_cowork_common::{TimestampMs, generate_prefixed_id, now_ms};
+use cora_cowork_common::{TimestampMs, generate_prefixed_id, now_ms};
 use sqlx::SqlitePool;
 
 use crate::error::DbError;

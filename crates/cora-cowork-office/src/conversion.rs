@@ -1,19 +1,19 @@
-﻿use std::{
+use std::{
     io::{Read, Seek},
     path::{Path, PathBuf},
 };
 
+use calamine::{Data, DataType, Range, Reader, Sheets, open_workbook_auto};
 use cora_cowork_api_types::{
     CellCoord, CellRange, ConversionResultDto, ConversionTarget, DocumentConversionResponse, ExcelSheetData,
     ExcelWorkbookData,
 };
 use cora_cowork_runtime::Builder as CmdBuilder;
-use calamine::{Data, DataType, Range, Reader, Sheets, open_workbook_auto};
 use serde_json::Value;
 use tracing::warn;
 
-use crate::error::OfficeError;
 use crate::corecli_runtime::resolve_corecli_path;
+use crate::error::OfficeError;
 
 pub struct ConversionService {
     corecli_path: Option<String>,

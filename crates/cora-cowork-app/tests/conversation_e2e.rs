@@ -1,14 +1,14 @@
-﻿//! E2E tests for conversation CRUD, clone, reset, associated, and auth protection.
+//! E2E tests for conversation CRUD, clone, reset, associated, and auth protection.
 
 mod common;
 
+use axum::http::StatusCode;
 use cora_cowork_db::{
     IAssistantDefinitionRepository, IAssistantOverlayRepository, IAssistantPreferenceRepository,
     IConversationRepository, SqliteAssistantDefinitionRepository, SqliteAssistantOverlayRepository,
     SqliteAssistantPreferenceRepository, SqliteConversationRepository, UpsertAssistantDefinitionParams,
     UpsertAssistantOverlayParams, UpsertAssistantPreferenceParams,
 };
-use axum::http::StatusCode;
 use serde_json::json;
 use tower::ServiceExt;
 
@@ -359,8 +359,10 @@ async fn t1_5c_create_rejects_missing_workspace_path() {
     let (mut app, services) = build_app().await;
     let (token, csrf) = setup_and_login(&mut app, &services, "admin", "StrongP@ss1").await;
 
-    let missing_workspace =
-        std::env::temp_dir().join(format!("cora-cowork-conv-missing-{}", cora_cowork_common::generate_short_id()));
+    let missing_workspace = std::env::temp_dir().join(format!(
+        "cora-cowork-conv-missing-{}",
+        cora_cowork_common::generate_short_id()
+    ));
 
     let body = json!({
         "type": "acp",
@@ -506,7 +508,13 @@ async fn t2_4_list_source_filter() {
 
     // Create 2 coracowork + 1 telegram
     for _ in 0..2 {
-        let req = json_with_token("POST", "/api/conversations", create_body("CoraCowork Conv"), &token, &csrf);
+        let req = json_with_token(
+            "POST",
+            "/api/conversations",
+            create_body("CoraCowork Conv"),
+            &token,
+            &csrf,
+        );
         app.clone().oneshot(req).await.unwrap();
     }
 

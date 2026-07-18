@@ -1,4 +1,4 @@
-﻿use cora_cowork_db::{IAgentMetadataRepository, SqliteAgentMetadataRepository, init_database_memory};
+use cora_cowork_db::{IAgentMetadataRepository, SqliteAgentMetadataRepository, init_database_memory};
 
 #[tokio::test]
 async fn pi_acp_builtin_metadata_is_seeded() {

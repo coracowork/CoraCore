@@ -1,4 +1,4 @@
-﻿use sqlx::SqlitePool;
+use sqlx::SqlitePool;
 use tracing::info;
 
 use crate::error::DbError;
@@ -137,11 +137,7 @@ mod tests {
         // point instead of a hidden assumption.
         let documented_non_contract_reads = [
             ("messages", "hidden", "Cora v22 adds it before v23-v26 issue path"),
-            (
-                "conversations",
-                "source",
-                "Cora v8 baseline before v23-v26 issue path",
-            ),
+            ("conversations", "source", "Cora v8 baseline before v23-v26 issue path"),
             (
                 "conversations",
                 "channel_chat_id",

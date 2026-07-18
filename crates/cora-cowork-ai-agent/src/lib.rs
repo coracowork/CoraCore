@@ -1,4 +1,4 @@
-﻿#![warn(clippy::disallowed_types)]
+#![warn(clippy::disallowed_types)]
 
 //! AI agent lifecycle, worker task dispatch, and skill management.
 pub mod active_lease;
@@ -29,12 +29,12 @@ pub use agent_runtime::AgentRuntime;
 #[cfg(any(test, feature = "test-support"))]
 pub use agent_task::IMockAgent;
 pub use agent_task::{AgentInstance, IAgentTask};
-pub use cora_cowork_api_types::{AcpBuildExtra, AcpModelInfo, CorarsBuildExtra, SlashCommandItem};
 pub use capability::skill_manager::{
     AcpSkillManager, SkillDefinition, SkillIndex, build_skills_index_text, build_system_instructions,
     build_system_instructions_with_skills_index, detect_skill_load_request, prepare_first_message,
     prepare_first_message_with_skills_index,
 };
+pub use cora_cowork_api_types::{AcpBuildExtra, AcpModelInfo, CorarsBuildExtra, SlashCommandItem};
 pub use error::AgentError;
 pub use factory::{AgentFactoryDeps, build_agent_factory};
 pub use idle_scanner::{IdleCleanupCoordinator, start_idle_scanner, start_idle_scanner_with_coordinator};
@@ -52,7 +52,7 @@ pub use services::AgentAvailabilityFeedbackPort;
 pub use services::AgentService;
 pub use services::RemoteAgentService;
 pub use session_context::{
-    AcpSessionBuildContext, AgentSessionContext, AgentSessionKind, CorarsSessionBuildContext, ConversationContext,
+    AcpSessionBuildContext, AgentSessionContext, AgentSessionKind, ConversationContext, CorarsSessionBuildContext,
     WorkspaceContext,
 };
 pub use task_manager::{IWorkerTaskManager, WorkerTaskManagerImpl};

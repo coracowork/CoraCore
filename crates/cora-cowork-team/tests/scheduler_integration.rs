@@ -2,13 +2,13 @@ mod common;
 
 use std::sync::Arc;
 
+use common::MockTeamRepo;
 use cora_cowork_api_types::WebSocketMessage;
 use cora_cowork_realtime::EventBroadcaster;
 use cora_cowork_team::{
     Mailbox, MailboxMessageType, SchedulerAction, TaskBoard, TeamAgent, TeammateManager, TeammateRole, TeammateStatus,
     WAKE_TIMEOUT_MS,
 };
-use common::MockTeamRepo;
 
 // ---------------------------------------------------------------------------
 // Test infrastructure

@@ -1,4 +1,4 @@
-﻿use std::str::FromStr;
+use std::str::FromStr;
 use std::sync::Arc;
 
 use chrono::{TimeZone, Utc};

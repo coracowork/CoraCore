@@ -1,4 +1,4 @@
-﻿use cora_cowork_db::init_database_memory;
+use cora_cowork_db::init_database_memory;
 
 #[tokio::test]
 async fn migration_creates_assistant_unification_tables_and_keeps_legacy_tables() {

@@ -1,4 +1,4 @@
-﻿//! Black-box integration tests for `CronService`.
+//! Black-box integration tests for `CronService`.
 //!
 //! Uses real SQLite (in-memory), mock broadcaster, and stubs for
 //! task manager / conversation service (since integration with AI agents
@@ -10,6 +10,8 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
+use axum::body::{Body, to_bytes};
+use axum::http::{Method, Request, StatusCode};
 use cora_cowork_ai_agent::AgentRegistry;
 use cora_cowork_ai_agent::agent_task::AgentInstance;
 use cora_cowork_ai_agent::types::BuildTaskOptions;
@@ -32,8 +34,6 @@ use cora_cowork_db::{
     models::{ConversationAssistantSnapshotRow, CronJobRow, MessageRow},
 };
 use cora_cowork_realtime::EventBroadcaster;
-use axum::body::{Body, to_bytes};
-use axum::http::{Method, Request, StatusCode};
 
 use cora_cowork_cron::events::CronEventEmitter;
 use cora_cowork_cron::executor::JobExecutor;
@@ -88,7 +88,11 @@ impl cora_cowork_ai_agent::task_manager::IWorkerTaskManager for StubTaskManager 
     ) -> Result<AgentInstance, cora_cowork_ai_agent::AgentError> {
         Err(cora_cowork_ai_agent::AgentError::internal("stub"))
     }
-    fn kill(&self, _: &str, _: Option<cora_cowork_common::AgentKillReason>) -> Result<(), cora_cowork_ai_agent::AgentError> {
+    fn kill(
+        &self,
+        _: &str,
+        _: Option<cora_cowork_common::AgentKillReason>,
+    ) -> Result<(), cora_cowork_ai_agent::AgentError> {
         Ok(())
     }
     fn kill_and_wait(
@@ -618,7 +622,10 @@ impl IConversationRepository for StubConvRepo {
             has_more_after: false,
         })
     }
-    async fn insert_message(&self, message: &cora_cowork_db::models::MessageRow) -> Result<(), cora_cowork_db::DbError> {
+    async fn insert_message(
+        &self,
+        message: &cora_cowork_db::models::MessageRow,
+    ) -> Result<(), cora_cowork_db::DbError> {
         self.messages.lock().unwrap().push(message.clone());
         Ok(())
     }
@@ -1726,7 +1733,9 @@ async fn update_team_conversation_job_rejects_execution_mode_change() {
     };
 
     let err = svc.update_job(&created.id, req).await.unwrap_err();
-    assert!(matches!(err, cora_cowork_cron::error::CronError::InvalidExecutionMode(message) if message.contains("Team")));
+    assert!(
+        matches!(err, cora_cowork_cron::error::CronError::InvalidExecutionMode(message) if message.contains("Team"))
+    );
 }
 
 #[tokio::test]
@@ -1995,7 +2004,10 @@ async fn sk4_save_empty_skill() {
         .save_skill(&job.id, SaveCronSkillRequest { content: "".into() })
         .await
         .unwrap_err();
-    assert!(matches!(err, cora_cowork_cron::error::CronError::InvalidSkillContent(_)));
+    assert!(matches!(
+        err,
+        cora_cowork_cron::error::CronError::InvalidSkillContent(_)
+    ));
 }
 
 // ── SK-5: Save placeholder skill ──────────────────────────────────
@@ -2017,7 +2029,10 @@ async fn sk5_save_placeholder_skill() {
         )
         .await
         .unwrap_err();
-    assert!(matches!(err, cora_cowork_cron::error::CronError::InvalidSkillContent(_)));
+    assert!(matches!(
+        err,
+        cora_cowork_cron::error::CronError::InvalidSkillContent(_)
+    ));
 }
 
 // ── SK-6: Save skill for nonexistent job ──────────────────────────
@@ -2088,7 +2103,10 @@ async fn sc5_invalid_cron_expression() {
         },
     );
     let err = svc.add_job(req).await.unwrap_err();
-    assert!(matches!(err, cora_cowork_cron::error::CronError::InvalidCronExpression(_)));
+    assert!(matches!(
+        err,
+        cora_cowork_cron::error::CronError::InvalidCronExpression(_)
+    ));
 }
 
 // ── SC-6: Cron with timezone ──────────────────────────────────────

@@ -1,4 +1,4 @@
-﻿//! Shared application services for dependency injection.
+//! Shared application services for dependency injection.
 
 use std::path::PathBuf;
 use std::sync::Arc;

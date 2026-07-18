@@ -1,4 +1,4 @@
-﻿use cora_cowork_common::TimestampMs;
+use cora_cowork_common::TimestampMs;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]

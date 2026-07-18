@@ -1,4 +1,4 @@
-﻿// --- File processing ---
+// --- File processing ---
 
 pub const CORA_COWORK_TIMESTAMP_SEPARATOR: &str = "_cora_cowork_";
 pub const CORA_COWORK_FILES_MARKER: &str = "[[CORA_FILES]]";

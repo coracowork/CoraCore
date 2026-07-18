@@ -1,4 +1,4 @@
-﻿//! `coracore doctor` subcommand: agent CLI detection self-check.
+//! `coracore doctor` subcommand: agent CLI detection self-check.
 //!
 //! Hydrates the agent registry against the real on-disk database and
 //! prints a per-agent availability table to stdout. Mirrors the
@@ -21,7 +21,9 @@ use std::process::ExitCode;
 use std::sync::Arc;
 
 use cora_cowork_ai_agent::{AgentRegistry, UnavailableReason};
-use cora_cowork_db::{IAgentMetadataRepository, SqliteAgentMetadataRepository, init_database, maybe_copy_legacy_database};
+use cora_cowork_db::{
+    IAgentMetadataRepository, SqliteAgentMetadataRepository, init_database, maybe_copy_legacy_database,
+};
 use cora_cowork_runtime::{acp_tool_doctor_snapshot, doctor_snapshot};
 
 use crate::cli::Cli;

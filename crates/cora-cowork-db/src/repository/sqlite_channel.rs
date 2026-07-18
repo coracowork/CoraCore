@@ -1,4 +1,4 @@
-﻿use sqlx::SqlitePool;
+use sqlx::SqlitePool;
 
 use crate::error::DbError;
 use crate::models::{AssistantSessionRow, AssistantUserRow, ChannelPluginRow, PairingCodeRow};
@@ -169,7 +169,11 @@ impl IChannelRepository for SqliteChannelRepository {
         Ok(())
     }
 
-    async fn update_user_last_active(&self, id: &str, last_active: cora_cowork_common::TimestampMs) -> Result<(), DbError> {
+    async fn update_user_last_active(
+        &self,
+        id: &str,
+        last_active: cora_cowork_common::TimestampMs,
+    ) -> Result<(), DbError> {
         let result = sqlx::query("UPDATE assistant_users SET last_active = ? WHERE id = ?")
             .bind(last_active)
             .bind(id)

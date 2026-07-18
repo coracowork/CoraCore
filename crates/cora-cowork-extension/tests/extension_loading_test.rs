@@ -1,4 +1,4 @@
-﻿//! Integration tests for extension loading (test-plan EL-1..EL-5).
+//! Integration tests for extension loading (test-plan EL-1..EL-5).
 //!
 //! These tests exercise `load_all` and `filter_by_engine_compatibility` as
 //! black-box functions, verifying scan priority, engine filtering, invalid
@@ -18,7 +18,13 @@ fn write_manifest(dir: &Path, name: &str, version: &str) {
     write_manifest_full(dir, name, version, None, None);
 }
 
-fn write_manifest_full(dir: &Path, name: &str, version: &str, engine_coracore: Option<&str>, api_version: Option<&str>) {
+fn write_manifest_full(
+    dir: &Path,
+    name: &str,
+    version: &str,
+    engine_coracore: Option<&str>,
+    api_version: Option<&str>,
+) {
     let mut manifest = serde_json::json!({
         "name": name,
         "version": version,

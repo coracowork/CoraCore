@@ -1,4 +1,4 @@
-﻿//! Sanitize a resumed corars session's message history before it is replayed
+//! Sanitize a resumed corars session's message history before it is replayed
 //! to a provider.
 //!
 //! Background: when the user clicks "Stop" on a tool-call mid-stream, corars

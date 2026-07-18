@@ -1,4 +1,4 @@
-﻿//! Black-box integration tests for `IChannelRepository`.
+//! Black-box integration tests for `IChannelRepository`.
 //!
 //! Tests exercise the repository trait interface without knowledge of
 //! the underlying SQLite implementation details.
@@ -7,7 +7,9 @@
 use std::sync::Arc;
 
 use cora_cowork_db::models::{AssistantSessionRow, AssistantUserRow, ChannelPluginRow, PairingCodeRow};
-use cora_cowork_db::{DbError, IChannelRepository, SqliteChannelRepository, UpdatePluginStatusParams, init_database_memory};
+use cora_cowork_db::{
+    DbError, IChannelRepository, SqliteChannelRepository, UpdatePluginStatusParams, init_database_memory,
+};
 
 async fn repo() -> (Arc<dyn IChannelRepository>, cora_cowork_db::Database) {
     let db = init_database_memory().await.unwrap();

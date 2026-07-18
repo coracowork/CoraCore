@@ -1,4 +1,4 @@
-﻿use std::sync::Arc;
+use std::sync::Arc;
 
 use cora_cowork_ai_agent::protocol::events::{ErrorEventData, TipType};
 use cora_cowork_ai_agent::{AgentSendError, AgentStreamEvent, protocol::events::ThinkingEventData};
@@ -530,7 +530,9 @@ impl StreamRelay {
                         self.finalize(
                             &full_text_buffer,
                             &text_segments,
-                            &AgentStreamEvent::Finish(cora_cowork_ai_agent::protocol::events::FinishEventData::default()),
+                            &AgentStreamEvent::Finish(
+                                cora_cowork_ai_agent::protocol::events::FinishEventData::default(),
+                            ),
                             RelayTerminal::ChannelClosed,
                         )
                         .await

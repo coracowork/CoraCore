@@ -1,4 +1,4 @@
-﻿use cora_cowork_common::TimestampMs;
+use cora_cowork_common::TimestampMs;
 
 use crate::error::DbError;
 use crate::models::CronJobRow;

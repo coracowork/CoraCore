@@ -1,4 +1,4 @@
-﻿//! Row models and repository parameter structs for the assistants domain.
+//! Row models and repository parameter structs for the assistants domain.
 
 use cora_cowork_common::TimestampMs;
 use serde::{Deserialize, Serialize};

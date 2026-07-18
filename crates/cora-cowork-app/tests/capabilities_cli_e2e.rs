@@ -1,4 +1,4 @@
-﻿//! E2E coverage for the top-level agent-facing `coracore capabilities` index.
+//! E2E coverage for the top-level agent-facing `coracore capabilities` index.
 
 use tokio::process::Command;
 
@@ -35,7 +35,10 @@ async fn top_level_capabilities_prints_domain_index_without_runtime_env() {
     assert_eq!(stdout["meta"]["schema_version"], 1);
     assert_eq!(stdout["data"]["contract"], "agent-facing-coracore-cli");
     assert_eq!(stdout["data"]["entrypoint"], "coracore capabilities");
-    assert_eq!(stdout["data"]["runtime_context"]["primary"], "CORA_COWORK_CONVERSATION_ID");
+    assert_eq!(
+        stdout["data"]["runtime_context"]["primary"],
+        "CORA_COWORK_CONVERSATION_ID"
+    );
 
     let domains = stdout["data"]["domains"]
         .as_array()

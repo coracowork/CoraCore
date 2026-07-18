@@ -1,4 +1,4 @@
-﻿//! CLI argument definitions for the `coracore` binary.
+//! CLI argument definitions for the `coracore` binary.
 //!
 //! Kept separate from `main.rs` to isolate the clap surface (struct + enum +
 //! attribute soup) from the runtime entry point. Visibility is `pub(crate)`

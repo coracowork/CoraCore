@@ -3,8 +3,8 @@ use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 
-use cora_cowork_api_types::{ConversationRuntimeSummary, TeamRunTargetRole};
 use async_trait::async_trait;
+use cora_cowork_api_types::{ConversationRuntimeSummary, TeamRunTargetRole};
 
 use crate::error::TeamError;
 

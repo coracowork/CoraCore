@@ -1,4 +1,4 @@
-﻿//! Startup-time PATH enhancement.
+//! Startup-time PATH enhancement.
 //!
 //! Call [`enhance_process_path`] from `main()` **before any worker thread
 //! is spawned** (including the tokio runtime). It rewrites

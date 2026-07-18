@@ -1,8 +1,8 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use cora_cowork_common::{AgentKillReason, now_ms};
 use async_trait::async_trait;
+use cora_cowork_common::{AgentKillReason, now_ms};
 use tracing::{debug, info};
 
 use crate::task_manager::IWorkerTaskManager;
@@ -147,8 +147,8 @@ async fn scan_and_cleanup(
 mod tests {
     use std::sync::{Arc, Mutex};
 
-    use cora_cowork_common::AgentKillReason;
     use async_trait::async_trait;
+    use cora_cowork_common::AgentKillReason;
 
     use super::*;
     use crate::agent_task::AgentInstance;

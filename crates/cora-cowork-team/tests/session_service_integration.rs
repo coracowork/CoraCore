@@ -28,6 +28,7 @@ use cora_cowork_db::{
 };
 use cora_cowork_realtime::EventBroadcaster;
 
+use common::MockTeamRepo;
 use cora_cowork_team::ports::{
     AgentTurnCancellationPort, AgentTurnExecutionError, AgentTurnExecutionPort, AgentTurnOutcome, AgentTurnRequest,
     AgentTurnStarted, AgentTurnStatus, TeamAssistantCatalogEntry, TeamAssistantCatalogPort,
@@ -39,7 +40,6 @@ use cora_cowork_team::{
     TeamProjectionMessageStore,
 };
 use cora_cowork_team::{TeamError, TeamSessionService};
-use common::MockTeamRepo;
 
 // ---------------------------------------------------------------------------
 // Mock ConversationRepository — minimal impl for TeamSessionService tests
@@ -312,8 +312,10 @@ struct FakePresetAssistantSnapshot {
 
 impl FakeConversationPorts {
     fn new(repo: Arc<MockConversationRepo>) -> Self {
-        let workspace_root =
-            std::env::temp_dir().join(format!("cora-cowork-team-fake-workspaces-{}", cora_cowork_common::generate_id()));
+        let workspace_root = std::env::temp_dir().join(format!(
+            "cora-cowork-team-fake-workspaces-{}",
+            cora_cowork_common::generate_id()
+        ));
         Self {
             repo,
             workspace_root,
@@ -405,7 +407,10 @@ impl TeamConversationProvisioningPort for FakeConversationPorts {
         })
     }
 
-    async fn conversation_workspace(&self, conversation_id: &str) -> Result<Option<String>, cora_cowork_team::TeamError> {
+    async fn conversation_workspace(
+        &self,
+        conversation_id: &str,
+    ) -> Result<Option<String>, cora_cowork_team::TeamError> {
         Ok(self.repo.get_extra(conversation_id).and_then(|extra| {
             extra
                 .get("workspace")
@@ -414,7 +419,10 @@ impl TeamConversationProvisioningPort for FakeConversationPorts {
         }))
     }
 
-    async fn conversation_assistant_id(&self, conversation_id: &str) -> Result<Option<String>, cora_cowork_team::TeamError> {
+    async fn conversation_assistant_id(
+        &self,
+        conversation_id: &str,
+    ) -> Result<Option<String>, cora_cowork_team::TeamError> {
         Ok(self.repo.get_extra(conversation_id).and_then(|extra| {
             extra
                 .get("assistant_id")
@@ -483,7 +491,11 @@ impl TeamConversationProvisioningPort for FakeConversationPorts {
         Ok(())
     }
 
-    async fn save_acp_runtime_mode(&self, conversation_id: &str, mode: &str) -> Result<(), cora_cowork_team::TeamError> {
+    async fn save_acp_runtime_mode(
+        &self,
+        conversation_id: &str,
+        mode: &str,
+    ) -> Result<(), cora_cowork_team::TeamError> {
         self.patch_runtime_config(conversation_id, serde_json::json!({ "session_mode": mode }))
             .await
     }
@@ -2285,8 +2297,10 @@ async fn create_team_with_workspace_writes_same_workspace_to_team_and_initial_ag
     let agent_metadata_repo: Arc<dyn IAgentMetadataRepository> = Arc::new(StubAgentMetadataRepo::empty());
     let (svc, _, conv_repo) =
         setup_with_factory_and_metadata_and_conversation_repo(success_factory(), agent_metadata_repo);
-    let workspace_dir =
-        std::env::temp_dir().join(format!("cora-cowork-team-user-workspace-{}", cora_cowork_common::generate_id()));
+    let workspace_dir = std::env::temp_dir().join(format!(
+        "cora-cowork-team-user-workspace-{}",
+        cora_cowork_common::generate_id()
+    ));
     std::fs::create_dir_all(&workspace_dir).unwrap();
     let workspace = workspace_dir.to_string_lossy().into_owned();
 
@@ -4060,7 +4074,10 @@ async fn aa_add_agent_inherits_team_workspace() {
     let agent_metadata_repo: Arc<dyn IAgentMetadataRepository> = Arc::new(StubAgentMetadataRepo::empty());
     let (svc, _, conv_repo) =
         setup_with_factory_and_metadata_and_conversation_repo(success_factory(), agent_metadata_repo);
-    let workspace = std::env::temp_dir().join(format!("cora-cowork-team-workspace-{}", cora_cowork_common::generate_id()));
+    let workspace = std::env::temp_dir().join(format!(
+        "cora-cowork-team-workspace-{}",
+        cora_cowork_common::generate_id()
+    ));
     std::fs::create_dir_all(&workspace).unwrap();
     let workspace = workspace.to_string_lossy().into_owned();
     let created = svc

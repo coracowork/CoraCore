@@ -1,4 +1,4 @@
-﻿use std::sync::Arc;
+use std::sync::Arc;
 
 use cora_cowork_api_types::{ConversationArtifactResponse, WebSocketMessage};
 use cora_cowork_common::generate_id;
@@ -141,8 +141,14 @@ mod tests {
         );
 
         let response = artifact_response_from_row(&row).unwrap();
-        assert_eq!(response.kind, cora_cowork_api_types::ConversationArtifactKind::SkillSuggest);
-        assert_eq!(response.status, cora_cowork_api_types::ConversationArtifactStatus::Pending);
+        assert_eq!(
+            response.kind,
+            cora_cowork_api_types::ConversationArtifactKind::SkillSuggest
+        );
+        assert_eq!(
+            response.status,
+            cora_cowork_api_types::ConversationArtifactStatus::Pending
+        );
         assert_eq!(response.payload["name"], "daily-report");
     }
 
@@ -150,7 +156,10 @@ mod tests {
     fn builds_cron_trigger_payload() {
         let row = build_cron_trigger_artifact("conv_1", &sample_job(), 1234);
         let response = artifact_response_from_row(&row).unwrap();
-        assert_eq!(response.kind, cora_cowork_api_types::ConversationArtifactKind::CronTrigger);
+        assert_eq!(
+            response.kind,
+            cora_cowork_api_types::ConversationArtifactKind::CronTrigger
+        );
         assert_eq!(response.payload["cron_job_id"], "cron_1");
         assert_eq!(response.payload["cron_job_name"], "Daily Report");
     }

@@ -1,9 +1,9 @@
-﻿use std::sync::Arc;
+use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::time::Duration;
 
 use cora_cowork_api_types::WebSocketMessage;
-use cora_cowork_office::{DocType, OfficeError, CorecliWatchManager, ProcessHandle, ProcessSpawner};
+use cora_cowork_office::{CorecliWatchManager, DocType, OfficeError, ProcessHandle, ProcessSpawner};
 use cora_cowork_realtime::EventBroadcaster;
 
 // ---------------------------------------------------------------------------

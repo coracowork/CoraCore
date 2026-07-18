@@ -415,7 +415,11 @@ mod tests {
             Err(DbError::NotFound("not implemented".into()))
         }
 
-        async fn update(&self, _id: &str, _params: cora_cowork_db::UpdateProviderParams<'_>) -> Result<Provider, DbError> {
+        async fn update(
+            &self,
+            _id: &str,
+            _params: cora_cowork_db::UpdateProviderParams<'_>,
+        ) -> Result<Provider, DbError> {
             Err(DbError::NotFound("not implemented".into()))
         }
 

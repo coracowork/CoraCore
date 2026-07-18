@@ -1,4 +1,4 @@
-﻿use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
 pub const TEAM_TOOLS_SCHEMA_VERSION: u32 = 1;

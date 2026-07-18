@@ -6,9 +6,9 @@
 
 use std::sync::Arc;
 
-use cora_cowork_realtime::BroadcastEventBus;
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
+use cora_cowork_realtime::BroadcastEventBus;
 use http_body_util::BodyExt;
 use serde_json::json;
 use tower::ServiceExt;

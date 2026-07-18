@@ -1,13 +1,13 @@
-﻿//! Abstraction over "what are the auto-inject skill names right now?" so
+//! Abstraction over "what are the auto-inject skill names right now?" so
 //! `ConversationService` can compute the initial snapshot without forcing
 //! every test setup to stand up a real `SkillPaths` and skill repository.
 
 use std::path::Path;
 use std::sync::Arc;
 
+use async_trait::async_trait;
 use cora_cowork_db::ISkillRepository;
 pub use cora_cowork_extension::ResolvedAgentSkill;
-use async_trait::async_trait;
 use tracing::warn;
 
 #[derive(Debug, Clone, PartialEq, Eq)]

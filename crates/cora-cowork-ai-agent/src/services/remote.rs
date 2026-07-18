@@ -1,6 +1,8 @@
 use std::sync::Arc;
 use std::time::Duration;
 
+use base64::Engine;
+use base64::engine::general_purpose::STANDARD as BASE64;
 use cora_cowork_api_types::{
     CreateRemoteAgentRequest, HandshakeResponse, RemoteAgentListItem, RemoteAgentResponse,
     TestRemoteAgentConnectionRequest, UpdateRemoteAgentRequest,
@@ -8,8 +10,6 @@ use cora_cowork_api_types::{
 use cora_cowork_common::{RemoteAgentAuthType, RemoteAgentProtocol, RemoteAgentStatus, decrypt_string, encrypt_string};
 use cora_cowork_db::models::RemoteAgentRow;
 use cora_cowork_db::{IRemoteAgentRepository, UpdateRemoteAgentParams};
-use base64::Engine;
-use base64::engine::general_purpose::STANDARD as BASE64;
 use ed25519_dalek::SigningKey;
 use tokio_tungstenite::tungstenite;
 use tracing::warn;

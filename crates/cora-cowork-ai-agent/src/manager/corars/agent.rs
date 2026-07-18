@@ -1,4 +1,4 @@
-﻿use std::collections::HashMap;
+use std::collections::HashMap;
 use std::future::Future;
 use std::path::PathBuf;
 use std::pin::Pin;
@@ -10,14 +10,16 @@ use cora_agent::engine::AgentEngine;
 use cora_agent::output::OutputSink;
 use cora_agent::session::Session;
 use cora_config::config::{CliArgs, Config, McpServerConfig};
-use cora_mcp::manager::McpManager;
-use cora_protocol::commands::{ApprovalScope, SessionMode};
-use cora_protocol::{ToolApprovalManager, ToolApprovalResult};
 use cora_cowork_api_types::{
     AcpConfigOptionDto, AcpConfigSelectOptionDto, AgentModeResponse, ConfigOptionConfirmation,
     GetConfigOptionsResponse, SetConfigOptionResponse, SlashCommandItem,
 };
-use cora_cowork_common::{AgentKillReason, AgentType, Confirmation, ConversationStatus, ErrorChain, TimestampMs, now_ms};
+use cora_cowork_common::{
+    AgentKillReason, AgentType, Confirmation, ConversationStatus, ErrorChain, TimestampMs, now_ms,
+};
+use cora_mcp::manager::McpManager;
+use cora_protocol::commands::{ApprovalScope, SessionMode};
+use cora_protocol::{ToolApprovalManager, ToolApprovalResult};
 use serde_json::Value;
 use tokio::sync::{Mutex, Notify, broadcast};
 use tokio::time::timeout;

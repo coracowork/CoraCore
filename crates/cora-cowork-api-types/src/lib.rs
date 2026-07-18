@@ -1,4 +1,4 @@
-﻿#![warn(clippy::disallowed_types)]
+#![warn(clippy::disallowed_types)]
 
 //! All HTTP request/response DTOs shared across the API surface.
 mod acp;

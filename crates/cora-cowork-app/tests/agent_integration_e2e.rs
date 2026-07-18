@@ -1,4 +1,4 @@
-﻿//! E2E integration tests with mock agent tasks.
+//! E2E integration tests with mock agent tasks.
 //!
 //! Tests the message flow, confirmation system, and auxiliary routes
 //! with a mock IWorkerTaskManager that provides in-memory agents.
@@ -13,6 +13,7 @@ use serde_json::{Value, json};
 use tokio::sync::broadcast;
 use tower::ServiceExt;
 
+use async_trait::async_trait;
 use cora_cowork_ai_agent::agent_task::{AgentInstance, IAgentTask, IMockAgent};
 use cora_cowork_ai_agent::protocol::events::TextEventData;
 use cora_cowork_ai_agent::types::{BuildTaskOptions, SendMessageData};
@@ -20,7 +21,6 @@ use cora_cowork_ai_agent::{AgentError, AgentStreamEvent, IWorkerTaskManager};
 use cora_cowork_api_types::AgentSource;
 use cora_cowork_common::{AgentKillReason, AgentType, Confirmation, ConversationStatus, TimestampMs, now_ms};
 use cora_cowork_db::UpsertAgentMetadataParams;
-use async_trait::async_trait;
 
 use common::{body_json, get_with_token, json_with_token, setup_and_login};
 

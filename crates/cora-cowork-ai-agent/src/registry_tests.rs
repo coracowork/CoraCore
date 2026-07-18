@@ -1,4 +1,4 @@
-﻿use super::*;
+use super::*;
 use cora_cowork_db::{
     IAgentMetadataRepository, SqliteAgentMetadataRepository, UpsertAgentMetadataParams, init_database_memory,
 };

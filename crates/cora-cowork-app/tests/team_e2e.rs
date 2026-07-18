@@ -1,17 +1,17 @@
 mod common;
 
-use cora_cowork_db::{IConversationRepository, MessagePageDirection, MessagePageParams};
 use axum::http::StatusCode;
+use cora_cowork_db::{IConversationRepository, MessagePageDirection, MessagePageParams};
 use serde_json::{Value, json};
 use tokio::net::TcpStream;
 use tower::ServiceExt;
 
-use cora_cowork_api_types::TeamMcpStdioConfig;
-use cora_cowork_team::mcp::protocol::{read_frame, write_frame};
 use common::{
     body_json, build_app, build_app_with_mock_agents, delete_with_token, get_request, get_with_token, json_with_token,
     setup_and_login,
 };
+use cora_cowork_api_types::TeamMcpStdioConfig;
+use cora_cowork_team::mcp::protocol::{read_frame, write_frame};
 
 const DEFAULT_TEAM_ASSISTANT_ID: &str = "team-e2e-assistant";
 const DEFAULT_TEAM_AGENT_ID: &str = "2d23ff1c";
@@ -388,8 +388,10 @@ async fn tc6c_create_team_rejects_missing_workspace_path() {
     let (mut app, services) = build_app().await;
     let (token, csrf) = setup_and_login(&mut app, &services, "admin", "StrongP@ss1").await;
     ensure_default_team_assistant(&mut app, &services, &token, &csrf).await;
-    let missing_workspace =
-        std::env::temp_dir().join(format!("cora-cowork-team-missing-{}", cora_cowork_common::generate_short_id()));
+    let missing_workspace = std::env::temp_dir().join(format!(
+        "cora-cowork-team-missing-{}",
+        cora_cowork_common::generate_short_id()
+    ));
 
     let body = json!({
         "name": "Alpha",

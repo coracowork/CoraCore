@@ -1,8 +1,8 @@
 use cora_agent::error::AgentError as CorarsAgentError;
-use cora_providers::ProviderError;
 use cora_cowork_api_types::{
     AgentErrorCode, AgentErrorOwnership, AgentErrorResolution, AgentErrorResolutionKind, AgentErrorResolutionTarget,
 };
+use cora_providers::ProviderError;
 
 use crate::protocol::send_error::AgentSendError;
 

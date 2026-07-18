@@ -15,7 +15,9 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use cora_cowork_api_types::{AgentLogoEntry, AgentManagementRow, ProviderHealthCheckRequest, ProviderHealthCheckResponse};
+use cora_cowork_api_types::{
+    AgentLogoEntry, AgentManagementRow, ProviderHealthCheckRequest, ProviderHealthCheckResponse,
+};
 use cora_cowork_db::IProviderRepository;
 use cora_cowork_realtime::EventBroadcaster;
 
@@ -155,7 +157,10 @@ impl AgentService {
         self.availability.run_manual_health_check(id).await
     }
 
-    pub async fn get_agent_overrides(&self, id: &str) -> Result<cora_cowork_api_types::AgentOverridesResponse, AgentError> {
+    pub async fn get_agent_overrides(
+        &self,
+        id: &str,
+    ) -> Result<cora_cowork_api_types::AgentOverridesResponse, AgentError> {
         let row = self
             .registry
             .repo_handle()

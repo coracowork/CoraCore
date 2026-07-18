@@ -1,4 +1,4 @@
-﻿use cora_cowork_api_types::{TEAM_TOOLS_SCHEMA_VERSION, team_tool_descriptors};
+use cora_cowork_api_types::{TEAM_TOOLS_SCHEMA_VERSION, team_tool_descriptors};
 use serde_json::{Value, json};
 
 pub(crate) fn data() -> Value {

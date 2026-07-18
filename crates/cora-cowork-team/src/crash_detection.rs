@@ -1,4 +1,4 @@
-﻿//! Classify fatal agent stream events into recoverable (rate-limited) vs crash.
+//! Classify fatal agent stream events into recoverable (rate-limited) vs crash.
 //!
 //! Paired with W4-D20a `detect_crash`. Rate-limit errors are surfaced as
 //! `TeammateStatus::Failed` without going through crash recovery (no kill,
@@ -114,7 +114,8 @@ mod crash_tests {
 
     #[test]
     fn detect_crash_non_error_returns_none() {
-        let event = AgentStreamEvent::Start(cora_cowork_ai_agent::protocol::events::StartEventData { session_id: None });
+        let event =
+            AgentStreamEvent::Start(cora_cowork_ai_agent::protocol::events::StartEventData { session_id: None });
         assert_eq!(detect_crash(&event), None);
     }
 }

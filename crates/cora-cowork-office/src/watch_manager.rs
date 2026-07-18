@@ -1,4 +1,4 @@
-﻿use std::path::{Path, PathBuf};
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -8,8 +8,8 @@ use cora_cowork_runtime::Builder as CmdBuilder;
 use dashmap::DashMap;
 use tokio::sync::Mutex;
 
-use crate::error::OfficeError;
 use crate::corecli_runtime::{CORECLI_LATEST_RELEASE_URL, install_command, resolve_corecli_path};
+use crate::error::OfficeError;
 use crate::port::{allocate_port, is_port_listening};
 use crate::types::DocType;
 

@@ -2,11 +2,13 @@ mod common;
 
 use std::sync::Arc;
 
+use common::MockTeamRepo;
 use cora_cowork_api_types::WebSocketMessage;
 use cora_cowork_realtime::EventBroadcaster;
 use cora_cowork_team::mcp::protocol::{read_frame, write_frame};
-use cora_cowork_team::{Mailbox, TaskBoard, TeamAgent, TeamMcpServer, TeamPromptDumpConfig, TeammateManager, TeammateRole};
-use common::MockTeamRepo;
+use cora_cowork_team::{
+    Mailbox, TaskBoard, TeamAgent, TeamMcpServer, TeamPromptDumpConfig, TeammateManager, TeammateRole,
+};
 use serde_json::{Value, json};
 use tokio::net::TcpStream;
 

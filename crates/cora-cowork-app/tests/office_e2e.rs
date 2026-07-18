@@ -1,4 +1,4 @@
-﻿//! E2E tests for office HTTP endpoints.
+//! E2E tests for office HTTP endpoints.
 //!
 //! Covers test-plan items:
 //! - AU-1/AU-2: Unauthenticated access rejected
@@ -22,7 +22,7 @@ use tower::ServiceExt;
 use common::{body_json, get_request, json_with_token, setup_and_login};
 
 use cora_cowork_app::{AppConfig, AppServices, build_module_states, create_router_with_states};
-use cora_cowork_office::{ConversionService, OfficeRouterState, CorecliWatchManager, ProxyService, SnapshotService};
+use cora_cowork_office::{ConversionService, CorecliWatchManager, OfficeRouterState, ProxyService, SnapshotService};
 
 // ── Helpers ──────────────────────────────────────────────────────────
 

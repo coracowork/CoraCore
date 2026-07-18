@@ -1,8 +1,8 @@
 use std::sync::{Arc, RwLock};
 
+use cora_cowork_common::{Confirmation, ConfirmationOption, generate_id};
 use cora_protocol::events::{ProtocolEvent, ToolCategory};
 use cora_protocol::writer::ProtocolEmitter;
-use cora_cowork_common::{Confirmation, ConfirmationOption, generate_id};
 use serde_json::json;
 use tokio::sync::broadcast;
 use tracing::debug;

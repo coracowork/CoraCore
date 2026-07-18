@@ -1,4 +1,4 @@
-﻿use std::ffi::{OsStr, OsString};
+use std::ffi::{OsStr, OsString};
 #[cfg(test)]
 use std::path::Path;
 use std::path::PathBuf;
@@ -11,8 +11,7 @@ use cora_cowork_runtime::resolve_command_path;
 // from many server deployments (cora-cowork#3212 follow-up).
 pub(crate) const CORECLI_INSTALL_SH_MIRROR_URL: &str = "https://d.officecli.ai/install.sh";
 pub(crate) const CORECLI_INSTALL_PS1_MIRROR_URL: &str = "https://d.officecli.ai/install.ps1";
-pub(crate) const CORECLI_INSTALL_SH_URL: &str =
-    "https://raw.githubusercontent.com/coracowork/CoraCLI/main/install.sh";
+pub(crate) const CORECLI_INSTALL_SH_URL: &str = "https://raw.githubusercontent.com/coracowork/CoraCLI/main/install.sh";
 pub(crate) const CORECLI_INSTALL_PS1_URL: &str =
     "https://raw.githubusercontent.com/coracowork/CoraCLI/main/install.ps1";
 pub(crate) const CORECLI_LATEST_RELEASE_URL: &str = "https://github.com/coracowork/CoraCLI/releases/latest";

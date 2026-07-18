@@ -1,4 +1,4 @@
-﻿use std::collections::HashMap;
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 use tracing::{debug, warn};
@@ -103,7 +103,10 @@ fn resolve_scan_paths_inner(
         }
     } else {
         if let Some(home) = dirs::home_dir() {
-            push(home.join(".cora-cowork").join(EXTENSIONS_DIR_NAME), ExtensionSource::Local);
+            push(
+                home.join(".cora-cowork").join(EXTENSIONS_DIR_NAME),
+                ExtensionSource::Local,
+            );
         }
 
         // 3. AppData directory (platform-specific).

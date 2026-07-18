@@ -1,4 +1,4 @@
-﻿pub use cora_cowork_common::constants::CORARS_RUNTIME_BACKEND;
+pub use cora_cowork_common::constants::CORARS_RUNTIME_BACKEND;
 use cora_cowork_common::constants::{is_team_capable, supports_team_cli_fallback, supports_team_mcp};
 
 /// Determine if a backend supports team mode.

@@ -1,4 +1,4 @@
-﻿use std::sync::Arc;
+use std::sync::Arc;
 
 use cora_cowork_channel::action::{ActionExecutor, MessageResult};
 use cora_cowork_channel::channel_settings::ChannelSettingsService;
@@ -36,7 +36,8 @@ fn make_text_message(user_id: &str, chat_id: &str, text: &str) -> UnifiedIncomin
 async fn unauthorized_user_gets_pairing_response() {
     let db = cora_cowork_db::init_database_memory().await.unwrap();
     let pool = db.pool().clone();
-    let repo: Arc<dyn cora_cowork_db::IChannelRepository> = Arc::new(cora_cowork_db::SqliteChannelRepository::new(pool.clone()));
+    let repo: Arc<dyn cora_cowork_db::IChannelRepository> =
+        Arc::new(cora_cowork_db::SqliteChannelRepository::new(pool.clone()));
     let bus = Arc::new(cora_cowork_realtime::BroadcastEventBus::new(64));
 
     let pref_repo: Arc<dyn cora_cowork_db::IClientPreferenceRepository> =

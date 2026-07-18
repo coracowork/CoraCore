@@ -119,18 +119,27 @@ mod tests {
         // We cannot reliably set env in parallel tests, so just verify
         // the default path contains "cora-cowork".
         let dir = resolve_cache_dir();
-        assert!(dir.contains("cora-cowork"), "cache_dir should contain 'cora-cowork': {dir}");
+        assert!(
+            dir.contains("cora-cowork"),
+            "cache_dir should contain 'cora-cowork': {dir}"
+        );
     }
 
     #[test]
     fn test_env_override_work_dir() {
         let dir = resolve_work_dir();
-        assert!(dir.contains("cora-cowork"), "work_dir should contain 'cora-cowork': {dir}");
+        assert!(
+            dir.contains("cora-cowork"),
+            "work_dir should contain 'cora-cowork': {dir}"
+        );
     }
 
     #[test]
     fn test_env_override_log_dir() {
         let dir = resolve_log_dir();
-        assert!(dir.contains("cora-cowork"), "log_dir should contain 'cora-cowork': {dir}");
+        assert!(
+            dir.contains("cora-cowork"),
+            "log_dir should contain 'cora-cowork': {dir}"
+        );
     }
 }

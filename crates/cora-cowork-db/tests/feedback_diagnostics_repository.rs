@@ -1,4 +1,4 @@
-﻿use cora_cowork_db::{
+use cora_cowork_db::{
     FeedbackDiagnosticsDbContext, FeedbackDiagnosticsProfile, FeedbackDiagnosticsRequest,
     IFeedbackDiagnosticsRepository, SqliteFeedbackDiagnosticsRepository, init_database_memory,
 };

@@ -1,5 +1,5 @@
-﻿use cora_cowork_db::MessagePageCursor;
 use base64::Engine;
+use cora_cowork_db::MessagePageCursor;
 
 use crate::ConversationError;
 

@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
+use async_trait::async_trait;
 use cora_cowork_ai_agent::IWorkerTaskManager;
 use cora_cowork_api_types::{AddAgentRequest, GetConfigOptionsResponse, TeamAgentInput, TeamToolTransport};
 use cora_cowork_common::{AgentKillReason, AgentType, ProviderWithModel, generate_id};
 use cora_cowork_db::models::{AgentMetadataRow, TeamRow};
 use cora_cowork_db::{IAgentMetadataRepository, IProviderRepository, ITeamRepository, UpdateTeamParams};
-use async_trait::async_trait;
 use tracing::{info, warn};
 
 use crate::capability::{supports_team_cli_fallback_backend, supports_team_mcp_backend};

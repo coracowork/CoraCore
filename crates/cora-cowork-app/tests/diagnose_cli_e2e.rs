@@ -1,4 +1,4 @@
-﻿//! E2E coverage for the agent-facing `coracore diagnose` CLI.
+//! E2E coverage for the agent-facing `coracore diagnose` CLI.
 
 use axum::extract::{Path, State};
 use axum::routing::get;
@@ -486,7 +486,8 @@ async fn diagnose_logs_tail_reads_latest_coracore_log_and_filters_errors() {
 
 #[test]
 fn builtin_troubleshooting_skill_uses_diagnose_cli_not_python_helper() {
-    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("assets/builtin-skills/cora-cowork-troubleshooting");
+    let root =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("assets/builtin-skills/cora-cowork-troubleshooting");
     let skill = std::fs::read_to_string(root.join("SKILL.md")).unwrap();
 
     for forbidden in ["python3", "cora_diag.py", "lsof", "ps -", "curl"] {
