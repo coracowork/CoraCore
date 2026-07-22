@@ -1031,7 +1031,7 @@ dependencies = [
 [[package]]
 name = "cora-agent"
 version = "0.2.6"
-source = "git+https://github.com/coracowork/corars.git?branch=main#687bc0384d7fece4fbc9c8b89ecfb06895d1b8c7"
+source = "git+https://github.com/coracowork/corars.git?tag=v0.2.6#687bc0384d7fece4fbc9c8b89ecfb06895d1b8c7"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1062,7 +1062,7 @@ dependencies = [
 [[package]]
 name = "cora-compact"
 version = "0.2.6"
-source = "git+https://github.com/coracowork/corars.git?branch=main#687bc0384d7fece4fbc9c8b89ecfb06895d1b8c7"
+source = "git+https://github.com/coracowork/corars.git?tag=v0.2.6#687bc0384d7fece4fbc9c8b89ecfb06895d1b8c7"
 dependencies = [
  "regex",
  "serde",
@@ -1074,7 +1074,7 @@ dependencies = [
 [[package]]
 name = "cora-config"
 version = "0.2.6"
-source = "git+https://github.com/coracowork/corars.git?branch=main#687bc0384d7fece4fbc9c8b89ecfb06895d1b8c7"
+source = "git+https://github.com/coracowork/corars.git?tag=v0.2.6#687bc0384d7fece4fbc9c8b89ecfb06895d1b8c7"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1645,7 +1645,7 @@ dependencies = [
 [[package]]
 name = "cora-mcp"
 version = "0.2.6"
-source = "git+https://github.com/coracowork/corars.git?branch=main#687bc0384d7fece4fbc9c8b89ecfb06895d1b8c7"
+source = "git+https://github.com/coracowork/corars.git?tag=v0.2.6#687bc0384d7fece4fbc9c8b89ecfb06895d1b8c7"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1666,7 +1666,7 @@ dependencies = [
 [[package]]
 name = "cora-memory"
 version = "0.2.6"
-source = "git+https://github.com/coracowork/corars.git?branch=main#687bc0384d7fece4fbc9c8b89ecfb06895d1b8c7"
+source = "git+https://github.com/coracowork/corars.git?tag=v0.2.6#687bc0384d7fece4fbc9c8b89ecfb06895d1b8c7"
 dependencies = [
  "chrono",
  "cora-config",
@@ -1680,7 +1680,7 @@ dependencies = [
 [[package]]
 name = "cora-process"
 version = "0.2.6"
-source = "git+https://github.com/coracowork/corars.git?branch=main#687bc0384d7fece4fbc9c8b89ecfb06895d1b8c7"
+source = "git+https://github.com/coracowork/corars.git?tag=v0.2.6#687bc0384d7fece4fbc9c8b89ecfb06895d1b8c7"
 dependencies = [
  "libc",
  "tokio",
@@ -1691,7 +1691,7 @@ dependencies = [
 [[package]]
 name = "cora-protocol"
 version = "0.2.6"
-source = "git+https://github.com/coracowork/corars.git?branch=main#687bc0384d7fece4fbc9c8b89ecfb06895d1b8c7"
+source = "git+https://github.com/coracowork/corars.git?tag=v0.2.6#687bc0384d7fece4fbc9c8b89ecfb06895d1b8c7"
 dependencies = [
  "cora-types",
  "serde",
@@ -1704,7 +1704,7 @@ dependencies = [
 [[package]]
 name = "cora-providers"
 version = "0.2.6"
-source = "git+https://github.com/coracowork/corars.git?branch=main#687bc0384d7fece4fbc9c8b89ecfb06895d1b8c7"
+source = "git+https://github.com/coracowork/corars.git?tag=v0.2.6#687bc0384d7fece4fbc9c8b89ecfb06895d1b8c7"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1732,7 +1732,7 @@ dependencies = [
 [[package]]
 name = "cora-skills"
 version = "0.2.6"
-source = "git+https://github.com/coracowork/corars.git?branch=main#687bc0384d7fece4fbc9c8b89ecfb06895d1b8c7"
+source = "git+https://github.com/coracowork/corars.git?tag=v0.2.6#687bc0384d7fece4fbc9c8b89ecfb06895d1b8c7"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1759,7 +1759,7 @@ dependencies = [
 [[package]]
 name = "cora-tools"
 version = "0.2.6"
-source = "git+https://github.com/coracowork/corars.git?branch=main#687bc0384d7fece4fbc9c8b89ecfb06895d1b8c7"
+source = "git+https://github.com/coracowork/corars.git?tag=v0.2.6#687bc0384d7fece4fbc9c8b89ecfb06895d1b8c7"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1781,7 +1781,7 @@ dependencies = [
 [[package]]
 name = "cora-types"
 version = "0.2.6"
-source = "git+https://github.com/coracowork/corars.git?branch=main#687bc0384d7fece4fbc9c8b89ecfb06895d1b8c7"
+source = "git+https://github.com/coracowork/corars.git?tag=v0.2.6#687bc0384d7fece4fbc9c8b89ecfb06895d1b8c7"
 dependencies = [
  "async-trait",
  "base64",
@@ -6552,7 +6552,7 @@ dependencies = [
 [[package]]
 name = "workspace-hack"
 version = "0.1.0"
-source = "git+https://github.com/coracowork/corars.git?branch=main#687bc0384d7fece4fbc9c8b89ecfb06895d1b8c7"
+source = "git+https://github.com/coracowork/corars.git?tag=v0.2.6#687bc0384d7fece4fbc9c8b89ecfb06895d1b8c7"
 dependencies = [
  "bitflags",
  "cc",
