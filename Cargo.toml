@@ -54,7 +54,7 @@ cora-cowork-assistant = { path = "crates/cora-cowork-assistant" }
 cora-cowork-app = { path = "crates/cora-cowork-app" }
 
 cora-agent = { git = "https://github.com/coracowork/corars.git", branch = "main" }
-cora-providers = { git = "https://github.com/coracowork/corars.git", branch = "main"" }
+cora-providers = { git = "https://github.com/coracowork/corars.git", branch = "main" }
 cora-types = { git = "https://github.com/coracowork/corars.git", branch = "main" }
 cora-protocol = { git = "https://github.com/coracowork/corars.git", branch = "main" }
 cora-config = { git = "https://github.com/coracowork/corars.git", branch = "main" }
