@@ -91,7 +91,7 @@ impl AgentSendError {
             },
             AgentError::Internal(_) => Self::new(
                 "CoraCowork failed while sending the message",
-                AgentErrorCode::CoracoworkInternalError,
+                AgentErrorCode::CoraCoworkInternalError,
                 AgentErrorOwnership::CoraCowork,
                 Some(detail),
                 true,
@@ -102,8 +102,8 @@ impl AgentSendError {
                 ),
             ),
             AgentError::Forbidden(_) => Self::new(
-                "CoraCowork blocked the request before it reached the Agent",
-                AgentErrorCode::CoracoworkPermissionError,
+                " blocked the request before it reached the Agent",
+                AgentErrorCode::PermissionError,
                 AgentErrorOwnership::CoraCowork,
                 Some(detail),
                 false,
@@ -1899,7 +1899,7 @@ mod tests {
     fn classifies_cora_cowork_conversation_busy_after_agent_and_provider_checks() {
         assert_classification(
             "Conflict: Conversation is already processing a message",
-            AgentErrorCode::CoracoworkConversationBusy,
+            AgentErrorCode::CoraCoworkConversationBusy,
             AgentErrorOwnership::CoraCowork,
             AgentErrorResolutionKind::WaitForCurrentResponse,
         );
