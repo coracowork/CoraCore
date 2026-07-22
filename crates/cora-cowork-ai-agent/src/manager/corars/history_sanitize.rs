@@ -83,10 +83,11 @@ fn strip_malformed_tool_calls(messages: &mut Vec<Message>) -> usize {
 
     for msg in messages.iter_mut() {
         msg.content.retain(|block| match block {
-            ContentBlock::ToolUse { name, .. } => !name.trim().is_empty(),
-            ContentBlock::ToolResult { tool_use_id, .. } => !malformed_tool_use_ids.contains(tool_use_id),
-            ContentBlock::Text { .. } | ContentBlock::Thinking { .. } => true,
-        });
+    ContentBlock::Text { .. } | ContentBlock::Thinking { .. } => true,
+    ContentBlock::ToolResult { .. } => true,
+    ContentBlock::Image { .. } | ContentBlock::ProviderItem { .. } => false, // remover
+    _ => true,
+});
     }
 
     let original_len = messages.len();
@@ -108,11 +109,10 @@ fn is_orphaned_assistant_tool_call(msg: &Message, answered: &HashSet<String>) ->
 
     for block in &msg.content {
         match block {
-            ContentBlock::ToolUse { id, .. } => {
-                has_tool_use = true;
-                if !answered.contains(id) {
-                    has_unanswered = true;
-                }
+    ContentBlock::Text { .. } | ContentBlock::Thinking { .. } | ContentBlock::ToolResult { .. } => {},
+    ContentBlock::Image { .. } | ContentBlock::ProviderItem { .. } => {},
+    _ => {},
+}
             }
             ContentBlock::Text { text } => {
                 if !text.trim().is_empty() {
