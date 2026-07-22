@@ -53,12 +53,12 @@ cora-cowork-cron = { path = "crates/cora-cowork-cron" }
 cora-cowork-assistant = { path = "crates/cora-cowork-assistant" }
 cora-cowork-app = { path = "crates/cora-cowork-app" }
 
-cora-agent = { git = "https://github.com/coracowork/corars.git", tag = "v0.2.6" }
-cora-providers = { git = "https://github.com/coracowork/corars.git", tag = "v0.2.6" }
-cora-types = { git = "https://github.com/coracowork/corars.git", tag = "v0.2.6" }
-cora-protocol = { git = "https://github.com/coracowork/corars.git", tag = "v0.2.6" }
-cora-config = { git = "https://github.com/coracowork/corars.git", tag = "v0.2.6" }
-cora-mcp = { git = "https://github.com/coracowork/corars.git", tag = "v0.2.6" }
+cora-agent = { git = "https://github.com/coracowork/corars.git", branch = "main" }
+cora-providers = { git = "https://github.com/coracowork/corars.git", branch = "main"" }
+cora-types = { git = "https://github.com/coracowork/corars.git", branch = "main" }
+cora-protocol = { git = "https://github.com/coracowork/corars.git", branch = "main" }
+cora-config = { git = "https://github.com/coracowork/corars.git", branch = "main" }
+cora-mcp = { git = "https://github.com/coracowork/corars.git", branch = "main" }
 
 # Core framework
 tokio = { version = "1", features = ["full"] }
