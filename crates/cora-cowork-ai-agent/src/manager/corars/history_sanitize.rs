@@ -63,7 +63,11 @@ pub fn sanitize_session_messages(messages: &mut Vec<Message>) -> usize {
     removed
 }
 
+/// Remove malformed tool calls (empty name) and their matching tool results.
+/// Also removes any `Image` and `ProviderItem` blocks which are not supported
+/// in the history sanitization context (they are harmless to drop).
 fn strip_malformed_tool_calls(messages: &mut Vec<Message>) -> usize {
+    // Collect IDs of ToolUse blocks with empty name.
     let malformed_tool_use_ids: HashSet<String> = messages
         .iter()
         .flat_map(|msg| msg.content.iter())
@@ -71,9 +75,10 @@ fn strip_malformed_tool_calls(messages: &mut Vec<Message>) -> usize {
             if let ContentBlock::ToolUse { id, name, .. } = block
                 && name.trim().is_empty()
             {
-                return Some(id.clone());
+                Some(id.clone())
+            } else {
+                None
             }
-            None
         })
         .collect();
 
@@ -81,15 +86,20 @@ fn strip_malformed_tool_calls(messages: &mut Vec<Message>) -> usize {
         return 0;
     }
 
+    // Remove malformed ToolUse blocks and their matching ToolResult blocks,
+    // and also drop Image and ProviderItem blocks (unused in sanitization).
     for msg in messages.iter_mut() {
-        msg.content.retain(|block| match block {
-    ContentBlock::Text { .. } | ContentBlock::Thinking { .. } => true,
-    ContentBlock::ToolResult { .. } => true,
-    ContentBlock::Image { .. } | ContentBlock::ProviderItem { .. } => false, // remover
-    _ => true,
-});
+        msg.content.retain(|block| {
+            match block {
+                ContentBlock::ToolUse { id, .. } if malformed_tool_use_ids.contains(id) => false,
+                ContentBlock::ToolResult { tool_use_id, .. } if malformed_tool_use_ids.contains(tool_use_id) => false,
+                ContentBlock::Image { .. } | ContentBlock::ProviderItem { .. } => false,
+                _ => true,
+            }
+        });
     }
 
+    // Remove messages that became empty.
     let original_len = messages.len();
     messages.retain(|msg| !msg.content.is_empty());
     original_len - messages.len()
@@ -109,20 +119,19 @@ fn is_orphaned_assistant_tool_call(msg: &Message, answered: &HashSet<String>) ->
 
     for block in &msg.content {
         match block {
-    ContentBlock::Text { .. } | ContentBlock::Thinking { .. } | ContentBlock::ToolResult { .. } => {},
-    ContentBlock::Image { .. } | ContentBlock::ProviderItem { .. } => {},
-    _ => {},
-}
+            ContentBlock::ToolUse { id, .. } => {
+                has_tool_use = true;
+                if !answered.contains(id) {
+                    has_unanswered = true;
+                }
             }
             ContentBlock::Text { text } => {
                 if !text.trim().is_empty() {
                     has_text = true;
                 }
             }
-            // Thinking, ToolResult, and Image blocks do not change the orphan
-            // determination. ToolResult should not appear on assistant
-            // messages, but if it does we ignore it here.
-            ContentBlock::Thinking { .. } | ContentBlock::ToolResult { .. } => {}
+            // Ignore Thinking, ToolResult, Image, ProviderItem, etc.
+            _ => {}
         }
     }
 
