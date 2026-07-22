@@ -6,7 +6,7 @@ use cora_cowork_ai_agent::AcpSkillManager;
 use cora_cowork_ai_agent::factory::{AgentFactoryDeps, build_agent_factory};
 use cora_cowork_ai_agent::registry::AgentRegistry;
 use cora_cowork_ai_agent::session_context::{
-    AgentSessionContext, AgentSessionKind, CorarsSessionBuildContext, ConversationContext, WorkspaceContext,
+    AgentSessionContext, AgentSessionKind, ConversationContext, CorarsSessionBuildContext, WorkspaceContext,
 };
 use cora_cowork_ai_agent::types::BuildTaskOptions;
 use cora_cowork_api_types::CorarsBuildExtra;

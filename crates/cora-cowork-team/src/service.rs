@@ -7,7 +7,9 @@ use std::path::PathBuf;
 use std::sync::{Arc, Weak};
 use std::time::Instant;
 
-use cora_cowork_ai_agent::{ActiveLeaseRegistry, AgentError, AgentInstance, IWorkerTaskManager, IdleCleanupCoordinator};
+use cora_cowork_ai_agent::{
+    ActiveLeaseRegistry, AgentError, AgentInstance, IWorkerTaskManager, IdleCleanupCoordinator,
+};
 use cora_cowork_api_types::{
     AddAgentRequest, CreateTeamRequest, GetConfigOptionsResponse, TeamAgentResponse, TeamAgentRuntimeStatus,
     TeamResponse, TeamRunAckResponse, TeamRunStateResponse, TeamSessionBinding, TeamSessionPhase, TeamSessionStatus,

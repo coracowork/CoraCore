@@ -30,7 +30,7 @@ use cora_cowork_extension::{
 };
 use cora_cowork_file::{BrowseRoots, FileRouterState, FileService, FileWatchService, SnapshotService};
 use cora_cowork_mcp::{
-    CorarsAdapter, CoracoworkAdapter, ClaudeAdapter, CodeBuddyAdapter, CodexAdapter, GeminiAdapter, McpAgentAdapter,
+    ClaudeAdapter, CodeBuddyAdapter, CodexAdapter, CoracoworkAdapter, CorarsAdapter, GeminiAdapter, McpAgentAdapter,
     McpConfigService, McpConnectionTestService, McpRouterState, McpSyncService, OpencodeAdapter, QwenAdapter,
 };
 use cora_cowork_office::{
@@ -328,7 +328,9 @@ pub fn build_assistant_state(services: &AppServices) -> AssistantRouterState {
 
     #[async_trait::async_trait]
     impl AssistantAgentCatalogPort for RegistryAssistantAgentCatalog {
-        async fn list_management_agents(&self) -> Result<Vec<cora_cowork_api_types::AgentManagementRow>, AssistantError> {
+        async fn list_management_agents(
+            &self,
+        ) -> Result<Vec<cora_cowork_api_types::AgentManagementRow>, AssistantError> {
             Ok(self.registry.list_management_rows().await)
         }
     }
@@ -457,7 +459,8 @@ fn file_watch_init_error(error: cora_cowork_file::FileError) -> RouterBuildError
 /// Build the default `McpRouterState` from application services.
 pub fn build_mcp_state(services: &AppServices) -> McpRouterState {
     let pool = services.database.pool().clone();
-    let repo: Arc<dyn cora_cowork_db::IMcpServerRepository> = Arc::new(cora_cowork_db::SqliteMcpServerRepository::new(pool));
+    let repo: Arc<dyn cora_cowork_db::IMcpServerRepository> =
+        Arc::new(cora_cowork_db::SqliteMcpServerRepository::new(pool));
 
     let adapters: Vec<Arc<dyn McpAgentAdapter>> = vec![
         Arc::new(ClaudeAdapter),
@@ -530,7 +533,8 @@ pub async fn build_channel_state(
     extension_registry: ExtensionRegistry,
 ) -> (ChannelRouterState, ChannelOrchestratorComponents) {
     let pool = services.database.pool().clone();
-    let repo: Arc<dyn cora_cowork_db::IChannelRepository> = Arc::new(cora_cowork_db::SqliteChannelRepository::new(pool));
+    let repo: Arc<dyn cora_cowork_db::IChannelRepository> =
+        Arc::new(cora_cowork_db::SqliteChannelRepository::new(pool));
     let encryption_key = derive_encryption_key(&services.jwt_secret_raw);
 
     let (message_tx, message_rx) = tokio::sync::mpsc::channel(256);
@@ -644,7 +648,8 @@ pub fn build_team_state(
     }
 
     let pool = services.database.pool().clone();
-    let team_repo: Arc<dyn cora_cowork_db::ITeamRepository> = Arc::new(cora_cowork_db::SqliteTeamRepository::new(pool.clone()));
+    let team_repo: Arc<dyn cora_cowork_db::ITeamRepository> =
+        Arc::new(cora_cowork_db::SqliteTeamRepository::new(pool.clone()));
     let conv_service = services.conversation_service.clone();
     let conv_repo: Arc<dyn IConversationRepository> = Arc::new(SqliteConversationRepository::new(pool));
     let adapters = Arc::new(TeamConversationAdapters::new(
@@ -683,7 +688,8 @@ pub fn build_team_state(
 /// Build the default `CronRouterState` from application services.
 pub fn build_cron_state(services: &AppServices) -> CronRouterState {
     let pool = services.database.pool().clone();
-    let cron_repo: Arc<dyn cora_cowork_db::ICronRepository> = Arc::new(cora_cowork_db::SqliteCronRepository::new(pool.clone()));
+    let cron_repo: Arc<dyn cora_cowork_db::ICronRepository> =
+        Arc::new(cora_cowork_db::SqliteCronRepository::new(pool.clone()));
 
     let conv_repo: Arc<dyn cora_cowork_db::IConversationRepository> =
         Arc::new(SqliteConversationRepository::new(pool.clone()));
@@ -886,7 +892,9 @@ mod tests {
     }
 
     use crate::AppConfig;
-    use cora_cowork_ai_agent::types::{CORA_COWORK_BASE_URL_ENV, CORA_COWORK_HELPER_BIN_ENV, BuildTaskOptions, SendMessageData};
+    use cora_cowork_ai_agent::types::{
+        BuildTaskOptions, CORA_COWORK_BASE_URL_ENV, CORA_COWORK_HELPER_BIN_ENV, SendMessageData,
+    };
     use cora_cowork_ai_agent::{
         AgentError, AgentInstance, AgentSendError, AgentStreamEvent, IAgentTask, IMockAgent, IWorkerTaskManager,
         WorkerTaskManagerImpl,
@@ -1209,7 +1217,9 @@ mod tests {
 
     #[test]
     fn file_watch_init_error_maps_to_bootstrap_server_failed() {
-        let err = file_watch_init_error(cora_cowork_file::FileError::Internal("watch backend unavailable".into()));
+        let err = file_watch_init_error(cora_cowork_file::FileError::Internal(
+            "watch backend unavailable".into(),
+        ));
 
         assert_eq!(err.stage(), "router.file_watch");
         assert_eq!(err.message(), "failed to initialize file watch service");

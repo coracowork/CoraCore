@@ -1,4 +1,4 @@
-﻿//! `coracore config` subcommand: agent-facing automation CLI for CoraCowork config.
+//! `coracore config` subcommand: agent-facing automation CLI for CoraCowork config.
 
 use std::collections::BTreeMap;
 use std::io::{self, Read, Write};

@@ -1,4 +1,4 @@
-﻿//! Minimal public contract for a running agent task.
+//! Minimal public contract for a running agent task.
 //!
 //! `IAgentTask` captures **only** the operations that every agent type
 //! implements identically and that the generic task_manager / idle_scanner /

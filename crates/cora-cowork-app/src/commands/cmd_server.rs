@@ -1,4 +1,4 @@
-﻿//! `coracore` (no subcommand): the main HTTP server.
+//! `coracore` (no subcommand): the main HTTP server.
 
 use std::io::{self, Write};
 use std::net::SocketAddr;
@@ -282,7 +282,8 @@ pub(crate) async fn run_server(
             router_runtime.team_service.clone(),
             services.active_lease_registry.clone(),
         ));
-    let (solo_timeout_secs, team_timeout_secs, scan_interval_secs) = cora_cowork_ai_agent::resolve_idle_config_from_env();
+    let (solo_timeout_secs, team_timeout_secs, scan_interval_secs) =
+        cora_cowork_ai_agent::resolve_idle_config_from_env();
     let idle_scanner_handle = cora_cowork_ai_agent::start_idle_scanner_with_coordinator(
         services.worker_task_manager.clone(),
         shutdown_rx,

@@ -1,4 +1,4 @@
-﻿//! E2E coverage for the agent-facing `coracore config` CLI.
+//! E2E coverage for the agent-facing `coracore config` CLI.
 
 use axum::extract::{Path, State};
 use axum::http::HeaderMap;

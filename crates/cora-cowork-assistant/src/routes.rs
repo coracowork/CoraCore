@@ -1,4 +1,4 @@
-﻿#![allow(clippy::disallowed_types)]
+#![allow(clippy::disallowed_types)]
 
 //! HTTP route handlers for `/api/assistants/*`.
 

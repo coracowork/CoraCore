@@ -1,4 +1,4 @@
-﻿use std::sync::Arc;
+use std::sync::Arc;
 
 use cora_cowork_ai_agent::types::{BuildTaskOptions, SendMessageData};
 use cora_cowork_ai_agent::{AgentError, AgentInstance, AgentSendError, AgentSessionKind, IWorkerTaskManager};

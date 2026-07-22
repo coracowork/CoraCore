@@ -1,4 +1,4 @@
-﻿use sqlx::SqlitePool;
+use sqlx::SqlitePool;
 
 use crate::error::DbError;
 use crate::models::Provider;

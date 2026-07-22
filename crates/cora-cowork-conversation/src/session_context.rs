@@ -2,8 +2,9 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use chrono::Datelike;
 use cora_cowork_ai_agent::session_context::{
-    AcpSessionBuildContext, AgentSessionContext, AgentSessionKind, CorarsSessionBuildContext, ConversationContext,
+    AcpSessionBuildContext, AgentSessionContext, AgentSessionKind, ConversationContext, CorarsSessionBuildContext,
     WorkspaceContext,
 };
 use cora_cowork_ai_agent::shared_kernel::{ConfigKey, ConfigValue, ModeId, ModelId, PersistedSessionState};
@@ -12,7 +13,6 @@ use cora_cowork_api_types::{AcpBuildExtra, CorarsBuildExtra, TeamSessionBinding}
 use cora_cowork_common::{AgentType, WorkspacePathValidationError, validate_workspace_path_availability};
 use cora_cowork_db::models::ConversationRow;
 use cora_cowork_db::{IAcpSessionRepository, IAgentMetadataRepository};
-use chrono::Datelike;
 use tracing::{debug, warn};
 
 use crate::convert::string_to_enum;
@@ -1103,7 +1103,10 @@ mod tests {
 
         for (agent_type, extra) in [
             ("gemini", serde_json::json!({})),
-            ("codex", serde_json::json!({ "workspace": "/tmp/cora-cowork-codex-history" })),
+            (
+                "codex",
+                serde_json::json!({ "workspace": "/tmp/cora-cowork-codex-history" }),
+            ),
             (
                 "openclaw-gateway",
                 serde_json::json!({ "gateway": { "use_external_gateway": true } }),

@@ -17,7 +17,7 @@ use regex::Regex;
 use tracing::{info, warn};
 
 use crate::factory::corars::{
-    map_corars_provider, resolve_corars_url_and_compat_with_mode, resolve_bedrock_config,
+    map_corars_provider, resolve_bedrock_config, resolve_corars_url_and_compat_with_mode,
     resolve_model_compat_overrides,
 };
 use crate::types::CorarsResolvedConfig;

@@ -539,7 +539,9 @@ impl StreamRelay {
                         self.finalize(
                             &full_text_buffer,
                             &text_segments,
-                            &AgentStreamEvent::Finish(cora_cowork_ai_agent::protocol::events::FinishEventData::default()),
+                            &AgentStreamEvent::Finish(
+                                cora_cowork_ai_agent::protocol::events::FinishEventData::default(),
+                            ),
                             RelayTerminal::ChannelClosed,
                         )
                         .await

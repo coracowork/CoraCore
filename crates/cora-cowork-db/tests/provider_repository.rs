@@ -1,4 +1,4 @@
-﻿//! Black-box integration tests for IProviderRepository.
+//! Black-box integration tests for IProviderRepository.
 //!
 //! Tests exercise the public trait interface against an in-memory SQLite database.
 

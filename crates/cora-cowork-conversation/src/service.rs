@@ -14,6 +14,7 @@ use crate::message_cursor::{decode_message_cursor, encode_message_cursor};
 use crate::runtime_completion::RuntimeCompletionPublisher;
 use crate::runtime_persistence::{RuntimePersistenceCoordinator, RuntimeWriteKind};
 use crate::runtime_state::ConversationRuntimeStateService;
+use chrono::Datelike;
 use cora_cowork_api_types::{
     ApprovalCheckResponse, AssistantConversationOverridesRequest, CancelConversationResponse, CloneConversationRequest,
     ConfirmRequest, ConfirmationListResponse, ConversationArtifactKind, ConversationArtifactListResponse,
@@ -39,8 +40,9 @@ use cora_cowork_db::{
 use cora_cowork_extension::AssistantRuleDispatcher;
 use cora_cowork_mcp::{AcpMcpCapabilities, parse_acp_mcp_capabilities};
 use cora_cowork_realtime::EventBroadcaster;
-use cora_cowork_runtime::{RuntimeCommandProbe, probe_node_runtime_supported, probe_runtime_command, resolve_command_path};
-use chrono::Datelike;
+use cora_cowork_runtime::{
+    RuntimeCommandProbe, probe_node_runtime_supported, probe_runtime_command, resolve_command_path,
+};
 use std::collections::{HashMap, HashSet};
 use std::time::Duration;
 use tracing::{debug, error, info, warn};
@@ -3808,7 +3810,10 @@ fn upsert_conversation_mcp_status(
     statuses.push(status);
 }
 
-fn classify_repo_mcp_status(row: &cora_cowork_db::models::McpServerRow, support: McpSupportPolicy) -> ConversationMcpStatus {
+fn classify_repo_mcp_status(
+    row: &cora_cowork_db::models::McpServerRow,
+    support: McpSupportPolicy,
+) -> ConversationMcpStatus {
     if !support.supports_row_transport(&row.transport_type) {
         return ConversationMcpStatus {
             id: row.id.clone(),

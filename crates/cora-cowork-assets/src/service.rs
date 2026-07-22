@@ -1,4 +1,4 @@
-﻿use std::path::{Component, Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 
 use http::HeaderValue;
 use rust_embed::RustEmbed;

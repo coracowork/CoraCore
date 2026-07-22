@@ -1,4 +1,4 @@
-﻿use std::process::ExitCode;
+use std::process::ExitCode;
 
 use crate::process_report::{ExitKind, ProcessReport};
 

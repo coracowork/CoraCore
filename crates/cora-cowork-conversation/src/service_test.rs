@@ -10,8 +10,8 @@ use cora_cowork_ai_agent::agent_task::{AgentInstance, IAgentTask, IMockAgent};
 use cora_cowork_ai_agent::protocol::events::tool_call::{ToolCallEventData, ToolCallStatus};
 use cora_cowork_ai_agent::protocol::events::{AgentStreamEvent, ErrorEventData, FinishEventData, TextEventData};
 use cora_cowork_ai_agent::types::{
-    CORA_COWORK_BASE_URL_ENV, CORA_COWORK_HELPER_BIN_ENV, CORA_COWORK_RUNTIME_TOKEN_ENV, BuildTaskOptions,
-    CONVERSATION_RUNTIME_CONTEXT_VERSION, SendMessageData,
+    BuildTaskOptions, CONVERSATION_RUNTIME_CONTEXT_VERSION, CORA_COWORK_BASE_URL_ENV, CORA_COWORK_HELPER_BIN_ENV,
+    CORA_COWORK_RUNTIME_TOKEN_ENV, SendMessageData,
 };
 use cora_cowork_ai_agent::{
     AcpError, AgentAvailabilityFeedbackPort, AgentError, AgentSendError, AgentSessionKind, IWorkerTaskManager,
@@ -551,7 +551,10 @@ impl IConversationRepository for MockRepo {
         })
     }
 
-    async fn list_artifacts(&self, conversation_id: &str) -> Result<Vec<ConversationArtifactRow>, cora_cowork_db::DbError> {
+    async fn list_artifacts(
+        &self,
+        conversation_id: &str,
+    ) -> Result<Vec<ConversationArtifactRow>, cora_cowork_db::DbError> {
         Ok(self
             .artifacts
             .lock()

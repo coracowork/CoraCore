@@ -1,4 +1,4 @@
-﻿use cora_cowork_api_types::{AgentErrorCode, AgentErrorOwnership};
+use cora_cowork_api_types::{AgentErrorCode, AgentErrorOwnership};
 use cora_cowork_common::{AgentKillReason, AgentType};
 use tracing::info;
 

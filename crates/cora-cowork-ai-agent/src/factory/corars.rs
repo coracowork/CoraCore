@@ -4,7 +4,6 @@ use std::sync::Arc;
 use cora_agent::session::SessionManager;
 use cora_config::compat::OpenAiApiMode;
 use cora_config::config::{McpServerConfig, TransportType};
-use cora_types::message::ImageInputCapability;
 use cora_cowork_api_types::{
     CorarsBuildExtra, ModelImageInputCapability, ModelOpenAiApiMode, ModelSettings, SessionMcpServer,
     SessionMcpTransport, TEAM_MCP_SERVER_NAME, TeamMcpStdioConfig,
@@ -14,6 +13,7 @@ use cora_cowork_db::IMcpServerRepository;
 use cora_cowork_db::models::McpServerRow;
 use cora_cowork_realtime::EventBroadcaster;
 use cora_cowork_runtime::ensure_runtime_command_with_reporter;
+use cora_types::message::ImageInputCapability;
 use serde_json::{Map, Value};
 use tracing::{debug, info, warn};
 

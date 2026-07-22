@@ -91,7 +91,10 @@ mod tests {
         // Mirrors migrate_lock_path: the suffix is appended to the full file
         // name (kept next to the DB, on the same filesystem).
         let path = instance_lock_path(Path::new("/data/coracowork/coracowork-backend.db"));
-        assert_eq!(path, PathBuf::from("/data/coracowork/coracowork-backend.db.instance.lock"));
+        assert_eq!(
+            path,
+            PathBuf::from("/data/coracowork/coracowork-backend.db.instance.lock")
+        );
     }
 
     #[test]

@@ -12,12 +12,15 @@ mod common;
 
 use std::sync::Arc;
 
+use axum::http::StatusCode;
 use cora_cowork_api_types::{
     AgentManagementRow, AgentManagementStatus, AgentSnapshotCheckKind, AgentSnapshotCheckStatus, AgentSource,
     AgentSourceInfo, BehaviorPolicy,
 };
 use cora_cowork_app::{AppConfig, AppServices, ModuleStates, build_module_states, create_router_with_states};
-use cora_cowork_assistant::{AssistantAgentCatalogPort, AssistantRouterState, AssistantService, BuiltinAssistantRegistry};
+use cora_cowork_assistant::{
+    AssistantAgentCatalogPort, AssistantRouterState, AssistantService, BuiltinAssistantRegistry,
+};
 use cora_cowork_common::AgentType;
 use cora_cowork_db::{
     IAssistantDefinitionRepository, IAssistantOverlayRepository, IAssistantOverrideRepository,
@@ -30,7 +33,6 @@ use cora_cowork_extension::{
     AssistantRuleDispatcher, ExtensionRegistry, ExtensionRouterState, ExtensionSource, ExtensionStateStore,
     ExternalPathsManager, HubIndexManager, HubInstaller, HubRouterState, ScanPath, SkillPaths, SkillRouterState,
 };
-use axum::http::StatusCode;
 use serde_json::{Value, json};
 use tempfile::TempDir;
 use tower::ServiceExt;
@@ -264,7 +266,9 @@ async fn fixture() -> Fixture {
     };
     states.skill = SkillRouterState {
         skill_paths,
-        skill_repo: std::sync::Arc::new(cora_cowork_db::SqliteSkillRepository::new(services.database.pool().clone())),
+        skill_repo: std::sync::Arc::new(cora_cowork_db::SqliteSkillRepository::new(
+            services.database.pool().clone(),
+        )),
         external_paths_manager: ext_paths_mgr,
         assistant_dispatcher: None, // wired below once service is constructed
     };
