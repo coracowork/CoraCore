@@ -78,7 +78,7 @@ impl AgentSendError {
                 stream_error: AgentStreamErrorData {
                     message: "Current Agent failed to run in this workspace path".into(),
                     code: Some(AgentErrorCode::WorkspacePathRuntimeUnavailable),
-                    ownership: Some(AgentErrorOwnership::Coracowork),
+                    ownership: Some(AgentErrorOwnership::CoraCowork),
                     detail: Some(sanitize_error_detail(&detail)),
                     workspace_path: Some(path.clone()),
                     retryable: Some(false),
@@ -92,7 +92,7 @@ impl AgentSendError {
             AgentError::Internal(_) => Self::new(
                 "CoraCowork failed while sending the message",
                 AgentErrorCode::CoracoworkInternalError,
-                AgentErrorOwnership::Coracowork,
+                AgentErrorOwnership::CoraCowork,
                 Some(detail),
                 true,
                 true,
@@ -104,7 +104,7 @@ impl AgentSendError {
             AgentError::Forbidden(_) => Self::new(
                 "CoraCowork blocked the request before it reached the Agent",
                 AgentErrorCode::CoracoworkPermissionError,
-                AgentErrorOwnership::Coracowork,
+                AgentErrorOwnership::CoraCowork,
                 Some(detail),
                 false,
                 true,
@@ -887,8 +887,8 @@ fn classify_cora_cowork_state(lower: &str) -> Option<ClassifiedError> {
     if lower.contains("conversation is already processing") {
         return Some(ClassifiedError {
             message: "The current response is still running",
-            code: AgentErrorCode::CoracoworkConversationBusy,
-            ownership: AgentErrorOwnership::Coracowork,
+            code: AgentErrorCode::CoraCoworkConversationBusy,
+            ownership: AgentErrorOwnership::CoraCowork,
             retryable: true,
             feedback_recommended: false,
             resolution_kind: Some(AgentErrorResolutionKind::WaitForCurrentResponse),
@@ -1318,7 +1318,7 @@ mod tests {
             AgentSendError::from_agent_error(AgentError::workspace_path_runtime_unavailable("/Users/test/Archive "));
 
         assert_eq!(err.code(), Some(AgentErrorCode::WorkspacePathRuntimeUnavailable));
-        assert_eq!(err.ownership(), Some(AgentErrorOwnership::Coracowork));
+        assert_eq!(err.ownership(), Some(AgentErrorOwnership::CoraCowork));
         assert_eq!(
             err.stream_error().workspace_path.as_deref(),
             Some("/Users/test/Archive ")
@@ -1900,7 +1900,7 @@ mod tests {
         assert_classification(
             "Conflict: Conversation is already processing a message",
             AgentErrorCode::CoracoworkConversationBusy,
-            AgentErrorOwnership::Coracowork,
+            AgentErrorOwnership::CoraCowork,
             AgentErrorResolutionKind::WaitForCurrentResponse,
         );
     }
