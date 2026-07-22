@@ -2,11 +2,7 @@
 
 use serde_json::{Value, json};
 
-const RUNTIME_ENV: [&str; 3] = [
-    "CORA_COWORK_BASE_URL",
-    "CORA_COWORK_CONVERSATION_ID",
-    "CORA_COWORK_USER_ID",
-];
+const RUNTIME_ENV: [&str; 3] = ["CORA_COWORK_BASE_URL", "CORA_COWORK_CONVERSATION_ID", "CORA_COWORK_USER_ID"];
 
 pub(crate) fn data() -> Value {
     json!({
@@ -61,6 +57,9 @@ pub(crate) fn data() -> Value {
             domain("core", &[
                 no_input(&["capabilities"], "Print this agent-readable capability contract.", false),
                 no_input(&["context"], "Read the current runtime context and current conversation assistant.", false),
+            ]),
+            domain("conversation", &[
+                stdin(&["conversation", "rename"], "Rename a conversation.", &["conversation_id", "name"], &["conversation_id"], true, false),
             ]),
             domain("assistants", &[
                 no_input(&["assistants", "list"], "List assistants.", false),

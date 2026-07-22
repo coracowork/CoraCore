@@ -415,11 +415,7 @@ mod tests {
             Err(DbError::NotFound("not implemented".into()))
         }
 
-        async fn update(
-            &self,
-            _id: &str,
-            _params: cora_cowork_db::UpdateProviderParams<'_>,
-        ) -> Result<Provider, DbError> {
+        async fn update(&self, _id: &str, _params: cora_cowork_db::UpdateProviderParams<'_>) -> Result<Provider, DbError> {
             Err(DbError::NotFound("not implemented".into()))
         }
 
@@ -442,6 +438,7 @@ mod tests {
             model_protocols: None,
             model_enabled: None,
             model_health: None,
+            model_settings: "{}".into(),
             bedrock_config: None,
             is_full_url: false,
             created_at: 0,

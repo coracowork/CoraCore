@@ -1,8 +1,8 @@
+use cora_types::message::ImageInputCapability;
 use serde_json::json;
 
 use super::{
-    IMAGE_INPUT_CATALOG_JSON, ImageInputCapability, ImageInputCatalog, parse_catalog, resolve_from_catalog,
-    resolve_image_input_capability,
+    IMAGE_INPUT_CATALOG_JSON, ImageInputCatalog, parse_catalog, resolve_from_catalog, resolve_image_input_capability,
 };
 
 fn catalog() -> ImageInputCatalog {
@@ -77,6 +77,16 @@ fn embedded_allowlist_resolves_regression_models_without_network() {
         resolve_image_input_capability("openai", Some("https://api.moonshot.ai/v1"), "kimi-k2.6"),
         ImageInputCapability::Supported
     );
+}
+
+#[test]
+fn embedded_allowlist_resolves_official_kimi_k2_7_code() {
+    for base_url in ["https://api.moonshot.cn/v1", "https://api.moonshot.ai/v1"] {
+        assert_eq!(
+            resolve_image_input_capability("openai", Some(base_url), "kimi-k2.7-code"),
+            ImageInputCapability::Supported
+        );
+    }
 }
 
 #[test]

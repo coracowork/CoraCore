@@ -30,11 +30,11 @@ use cora_cowork_extension::{
 };
 use cora_cowork_file::{BrowseRoots, FileRouterState, FileService, FileWatchService, SnapshotService};
 use cora_cowork_mcp::{
-    ClaudeAdapter, CodeBuddyAdapter, CodexAdapter, CoraCoworkAdapter, CorarsAdapter, GeminiAdapter, McpAgentAdapter,
+    CorarsAdapter, CoracoworkAdapter, ClaudeAdapter, CodeBuddyAdapter, CodexAdapter, GeminiAdapter, McpAgentAdapter,
     McpConfigService, McpConnectionTestService, McpRouterState, McpSyncService, OpencodeAdapter, QwenAdapter,
 };
 use cora_cowork_office::{
-    ConversionService, CorecliWatchManager, OfficeRouterState, ProxyService, SnapshotService as OfficeSnapshotService,
+    ConversionService, OfficeRouterState, OfficecliWatchManager, ProxyService, SnapshotService as OfficeSnapshotService,
 };
 use cora_cowork_realtime::{NoopMessageRouter, WsHandlerState};
 use cora_cowork_shell::ShellRouterState;
@@ -79,6 +79,26 @@ impl RouterBuildError {
 
     pub fn message(&self) -> &'static str {
         self.message
+    }
+}
+
+/// Map an assistant bootstrap failure to a router build error.
+///
+/// A [`AssistantError::ConcurrentBootstrapContention`] is benign and recoverable
+/// (a transient concurrent-startup race), so it gets a distinct boundary stage
+/// (`router.assistant.bootstrap.concurrency_contended`) that AionUi maps to a
+/// gentle "retry/restart" message instead of the "local data corruption" false
+/// alarm. The boundary code stays `BOOTSTRAP_SERVER_FAILED`; only the stage
+/// differs (Sentry 135525166). All other errors keep the original stage.
+fn assistant_bootstrap_build_error(error: AssistantError) -> RouterBuildError {
+    if matches!(error, AssistantError::ConcurrentBootstrapContention(_)) {
+        RouterBuildError::new(
+            "router.assistant.bootstrap.concurrency_contended",
+            "assistant storage bootstrap contended under concurrent startup",
+        )
+        .with_source(error)
+    } else {
+        RouterBuildError::new("router.assistant.bootstrap", "failed to bootstrap assistant storage").with_source(error)
     }
 }
 
@@ -127,7 +147,7 @@ fn default_allowed_roots(work_dir: Option<&std::path::Path>) -> Vec<std::path::P
     ];
     // Auto-provisioned per-conversation workspaces live under
     // `{work_dir}/conversations/{label}-temp-{id}/`. On Windows the
-    // operator may put `work_dir` on a separate drive (e.g. `X:\CoraCowork`)
+    // operator may put `work_dir` on a separate drive (e.g. `X:\AionUi`)
     // that's neither under `temp_dir` nor `home_dir`. Including `work_dir`
     // keeps temp workspaces on the default allowlist without widening it
     // to unrelated paths.
@@ -195,9 +215,11 @@ pub async fn build_module_states(
     );
 
     let assistant = build_assistant_state(services);
-    assistant.service.bootstrap_assistant_storage().await.map_err(|error| {
-        RouterBuildError::new("router.assistant.bootstrap", "failed to bootstrap assistant storage").with_source(error)
-    })?;
+    assistant
+        .service
+        .bootstrap_assistant_storage()
+        .await
+        .map_err(assistant_bootstrap_build_error)?;
     let cron = build_cron_state(services);
     // Cron builds its own ConversationService (not a clone of the shared one),
     // so wire the assistant rule dispatcher here — otherwise scheduled runs
@@ -306,9 +328,7 @@ pub fn build_assistant_state(services: &AppServices) -> AssistantRouterState {
 
     #[async_trait::async_trait]
     impl AssistantAgentCatalogPort for RegistryAssistantAgentCatalog {
-        async fn list_management_agents(
-            &self,
-        ) -> Result<Vec<cora_cowork_api_types::AgentManagementRow>, AssistantError> {
+        async fn list_management_agents(&self) -> Result<Vec<cora_cowork_api_types::AgentManagementRow>, AssistantError> {
             Ok(self.registry.list_management_rows().await)
         }
     }
@@ -361,7 +381,10 @@ pub fn build_system_state(services: &AppServices) -> SystemRouterState {
 
     SystemRouterState {
         settings_service: SettingsService::new(Arc::new(SqliteSettingsRepository::new(pool.clone()))),
-        client_pref_service: ClientPrefService::new(Arc::new(SqliteClientPreferenceRepository::new(pool.clone()))),
+        client_pref_service: ClientPrefService::with_keep_awake_controller(
+            Arc::new(SqliteClientPreferenceRepository::new(pool.clone())),
+            Arc::new(cora_cowork_system::SystemKeepAwakeController::new()),
+        ),
         provider_service: ProviderService::new(provider_repo.clone(), encryption_key),
         model_fetch_service: ModelFetchService::new(provider_repo, encryption_key, http_client.clone()),
         protocol_detection_service: ProtocolDetectionService::new(http_client.clone()),
@@ -434,8 +457,7 @@ fn file_watch_init_error(error: cora_cowork_file::FileError) -> RouterBuildError
 /// Build the default `McpRouterState` from application services.
 pub fn build_mcp_state(services: &AppServices) -> McpRouterState {
     let pool = services.database.pool().clone();
-    let repo: Arc<dyn cora_cowork_db::IMcpServerRepository> =
-        Arc::new(cora_cowork_db::SqliteMcpServerRepository::new(pool));
+    let repo: Arc<dyn cora_cowork_db::IMcpServerRepository> = Arc::new(cora_cowork_db::SqliteMcpServerRepository::new(pool));
 
     let adapters: Vec<Arc<dyn McpAgentAdapter>> = vec![
         Arc::new(ClaudeAdapter),
@@ -445,7 +467,7 @@ pub fn build_mcp_state(services: &AppServices) -> McpRouterState {
         Arc::new(CodeBuddyAdapter),
         Arc::new(OpencodeAdapter),
         Arc::new(CorarsAdapter),
-        Arc::new(CoraCoworkAdapter::new(repo.clone())),
+        Arc::new(CoracoworkAdapter::new(repo.clone())),
     ];
 
     let oauth_token_repo: Arc<dyn cora_cowork_db::IOAuthTokenRepository> = Arc::new(
@@ -508,8 +530,7 @@ pub async fn build_channel_state(
     extension_registry: ExtensionRegistry,
 ) -> (ChannelRouterState, ChannelOrchestratorComponents) {
     let pool = services.database.pool().clone();
-    let repo: Arc<dyn cora_cowork_db::IChannelRepository> =
-        Arc::new(cora_cowork_db::SqliteChannelRepository::new(pool));
+    let repo: Arc<dyn cora_cowork_db::IChannelRepository> = Arc::new(cora_cowork_db::SqliteChannelRepository::new(pool));
     let encryption_key = derive_encryption_key(&services.jwt_secret_raw);
 
     let (message_tx, message_rx) = tokio::sync::mpsc::channel(256);
@@ -623,8 +644,7 @@ pub fn build_team_state(
     }
 
     let pool = services.database.pool().clone();
-    let team_repo: Arc<dyn cora_cowork_db::ITeamRepository> =
-        Arc::new(cora_cowork_db::SqliteTeamRepository::new(pool.clone()));
+    let team_repo: Arc<dyn cora_cowork_db::ITeamRepository> = Arc::new(cora_cowork_db::SqliteTeamRepository::new(pool.clone()));
     let conv_service = services.conversation_service.clone();
     let conv_repo: Arc<dyn IConversationRepository> = Arc::new(SqliteConversationRepository::new(pool));
     let adapters = Arc::new(TeamConversationAdapters::new(
@@ -663,8 +683,7 @@ pub fn build_team_state(
 /// Build the default `CronRouterState` from application services.
 pub fn build_cron_state(services: &AppServices) -> CronRouterState {
     let pool = services.database.pool().clone();
-    let cron_repo: Arc<dyn cora_cowork_db::ICronRepository> =
-        Arc::new(cora_cowork_db::SqliteCronRepository::new(pool.clone()));
+    let cron_repo: Arc<dyn cora_cowork_db::ICronRepository> = Arc::new(cora_cowork_db::SqliteCronRepository::new(pool.clone()));
 
     let conv_repo: Arc<dyn cora_cowork_db::IConversationRepository> =
         Arc::new(SqliteConversationRepository::new(pool.clone()));
@@ -753,7 +772,7 @@ pub fn build_office_state(services: &AppServices) -> OfficeRouterState {
 
     let spawner: Arc<dyn cora_cowork_office::ProcessSpawner> =
         Arc::new(cora_cowork_office::DefaultProcessSpawner::new(data_dir.to_path_buf()));
-    let watch_manager = Arc::new(CorecliWatchManager::new(spawner, services.event_bus.clone()));
+    let watch_manager = Arc::new(OfficecliWatchManager::new(spawner, services.event_bus.clone()));
 
     let snapshot_service = Arc::new(OfficeSnapshotService::new(data_dir));
     let conversion_service = Arc::new(ConversionService::with_data_dir(None, data_dir.to_path_buf()));
@@ -854,10 +873,20 @@ mod tests {
     use std::sync::{Arc, Mutex};
     use std::time::Duration;
 
+    // T-B4 — concurrent-startup contention gets a distinct boundary stage so it
+    // is not misreported as local data corruption (Sentry 135525166).
+    #[test]
+    fn concurrent_contention_maps_to_distinct_bootstrap_stage() {
+        let contended =
+            assistant_bootstrap_build_error(AssistantError::ConcurrentBootstrapContention("contended".into()));
+        assert_eq!(contended.stage(), "router.assistant.bootstrap.concurrency_contended");
+
+        let other = assistant_bootstrap_build_error(AssistantError::Internal("boom".into()));
+        assert_eq!(other.stage(), "router.assistant.bootstrap");
+    }
+
     use crate::AppConfig;
-    use cora_cowork_ai_agent::types::{
-        BuildTaskOptions, CORA_COWORK_BASE_URL_ENV, CORA_COWORK_HELPER_BIN_ENV, SendMessageData,
-    };
+    use cora_cowork_ai_agent::types::{CORA_COWORK_BASE_URL_ENV, CORA_COWORK_HELPER_BIN_ENV, BuildTaskOptions, SendMessageData};
     use cora_cowork_ai_agent::{
         AgentError, AgentInstance, AgentSendError, AgentStreamEvent, IAgentTask, IMockAgent, IWorkerTaskManager,
         WorkerTaskManagerImpl,
@@ -975,8 +1004,6 @@ mod tests {
             source: "generated",
             owner_type: "system",
             source_ref: Some("bare-channel-corars"),
-            source_version: None,
-            source_hash: None,
             name: "Bare Channel Corars",
             name_i18n: "{}",
             description: Some("Channel state regression assistant"),
@@ -984,9 +1011,8 @@ mod tests {
             avatar_type: "emoji",
             avatar_value: Some("A"),
             agent_id: "632f31d2",
-            rule_resource_type: "inline",
+            rule_resource_type: "user_file",
             rule_resource_ref: None,
-            rule_inline_content: Some(""),
             recommended_prompts: "[]",
             recommended_prompts_i18n: "{}",
             default_model_mode: "auto",
@@ -1183,9 +1209,7 @@ mod tests {
 
     #[test]
     fn file_watch_init_error_maps_to_bootstrap_server_failed() {
-        let err = file_watch_init_error(cora_cowork_file::FileError::Internal(
-            "watch backend unavailable".into(),
-        ));
+        let err = file_watch_init_error(cora_cowork_file::FileError::Internal("watch backend unavailable".into()));
 
         assert_eq!(err.stage(), "router.file_watch");
         assert_eq!(err.message(), "failed to initialize file watch service");

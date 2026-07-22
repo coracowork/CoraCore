@@ -85,8 +85,6 @@ pub struct CorarsBuildExtra {
     #[serde(default)]
     pub skills: Vec<String>,
     #[serde(default)]
-    pub max_tokens: Option<u32>,
-    #[serde(default)]
     pub max_turns: Option<usize>,
     #[serde(default)]
     pub max_tool_call_malformed_turns: Option<usize>,
@@ -169,10 +167,11 @@ mod tests {
     }
 
     #[test]
-    fn corars_build_extra_ignores_legacy_guide_config_field() {
+    fn corars_build_extra_ignores_legacy_fields() {
         let legacy_key = concat!("guide", "_mcp_config");
         let parsed: CorarsBuildExtra = serde_json::from_value(serde_json::json!({
             "backend": "corars",
+            "max_tokens": 8192,
             legacy_key: {"port": 1234, "token": "legacy", "binary_path": "/bin/coracore"}
         }))
         .unwrap();
@@ -182,6 +181,10 @@ mod tests {
         assert!(
             serialized.get(legacy_key).is_none(),
             "legacy guide config must be ignored, not re-serialized"
+        );
+        assert!(
+            serialized.get("max_tokens").is_none(),
+            "legacy max_tokens must be ignored, not re-serialized"
         );
     }
 }

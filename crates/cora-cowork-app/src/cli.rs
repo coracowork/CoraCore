@@ -274,6 +274,8 @@ pub(crate) enum ConfigCommand {
     Capabilities,
     /// Print the current agent runtime context.
     Context,
+    /// Manage conversations.
+    Conversation(ConfigConversationArgs),
     /// Manage assistants and assistant-owned behavior.
     Assistants(ConfigAssistantsArgs),
     /// Manage CoraCowork skills.
@@ -566,6 +568,17 @@ pub(crate) enum ConfigCronCurrentCommand {
 }
 
 #[derive(Args, Debug, Clone)]
+pub(crate) struct ConfigConversationArgs {
+    #[command(subcommand)]
+    pub command: ConfigConversationCommand,
+}
+
+#[derive(Subcommand, Debug, Clone)]
+pub(crate) enum ConfigConversationCommand {
+    Rename,
+}
+
+#[derive(Args, Debug, Clone)]
 pub(crate) struct PrepareManagedResourcesArgs {
     /// Bundle output root. Coracore writes the managed resources under
     /// `<bundle-out>/{node,acp}/...` for packaging.
@@ -715,6 +728,7 @@ mod tests {
         let commands: &[&[&str]] = &[
             &["coracore", "config", "capabilities"],
             &["coracore", "config", "context"],
+            &["coracore", "config", "conversation", "rename"],
             &["coracore", "config", "assistants", "list"],
             &["coracore", "config", "assistants", "get"],
             &["coracore", "config", "assistants", "create"],

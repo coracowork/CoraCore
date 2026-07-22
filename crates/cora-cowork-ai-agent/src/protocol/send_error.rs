@@ -78,7 +78,7 @@ impl AgentSendError {
                 stream_error: AgentStreamErrorData {
                     message: "Current Agent failed to run in this workspace path".into(),
                     code: Some(AgentErrorCode::WorkspacePathRuntimeUnavailable),
-                    ownership: Some(AgentErrorOwnership::CoraCowork),
+                    ownership: Some(AgentErrorOwnership::Coracowork),
                     detail: Some(sanitize_error_detail(&detail)),
                     workspace_path: Some(path.clone()),
                     retryable: Some(false),
@@ -91,8 +91,8 @@ impl AgentSendError {
             },
             AgentError::Internal(_) => Self::new(
                 "CoraCowork failed while sending the message",
-                AgentErrorCode::CoraCoworkInternalError,
-                AgentErrorOwnership::CoraCowork,
+                AgentErrorCode::CoracoworkInternalError,
+                AgentErrorOwnership::Coracowork,
                 Some(detail),
                 true,
                 true,
@@ -103,8 +103,8 @@ impl AgentSendError {
             ),
             AgentError::Forbidden(_) => Self::new(
                 "CoraCowork blocked the request before it reached the Agent",
-                AgentErrorCode::CoraCoworkPermissionError,
-                AgentErrorOwnership::CoraCowork,
+                AgentErrorCode::CoracoworkPermissionError,
+                AgentErrorOwnership::Coracowork,
                 Some(detail),
                 false,
                 true,
@@ -361,6 +361,15 @@ impl AgentSendError {
                 Some(detail),
                 false,
                 false,
+                None,
+            ),
+            AcpError::RequestTimeout { .. } => Self::new(
+                "The selected Agent did not respond to the request in time",
+                AgentErrorCode::UserAgentDisconnected,
+                AgentErrorOwnership::UserAgent,
+                Some(detail),
+                true,  // retryable — the user can immediately retry the config change
+                false, // feedback_recommended
                 None,
             ),
             AcpError::AgentInternal { .. } => unknown_upstream_error(detail),
@@ -829,8 +838,8 @@ fn classify_provider_text(lower: &str) -> Option<ClassifiedError> {
             "The model provider could not be reached",
             AgentErrorCode::UserLlmProviderNetworkError,
             true,
-            AgentErrorResolutionKind::CheckProviderBaseUrl,
-            Some(AgentErrorResolutionTarget::ProviderSettings),
+            AgentErrorResolutionKind::Retry,
+            None,
         ));
     }
     if contains_any(
@@ -878,8 +887,8 @@ fn classify_cora_cowork_state(lower: &str) -> Option<ClassifiedError> {
     if lower.contains("conversation is already processing") {
         return Some(ClassifiedError {
             message: "The current response is still running",
-            code: AgentErrorCode::CoraCoworkConversationBusy,
-            ownership: AgentErrorOwnership::CoraCowork,
+            code: AgentErrorCode::CoracoworkConversationBusy,
+            ownership: AgentErrorOwnership::Coracowork,
             retryable: true,
             feedback_recommended: false,
             resolution_kind: Some(AgentErrorResolutionKind::WaitForCurrentResponse),
@@ -1309,7 +1318,7 @@ mod tests {
             AgentSendError::from_agent_error(AgentError::workspace_path_runtime_unavailable("/Users/test/Archive "));
 
         assert_eq!(err.code(), Some(AgentErrorCode::WorkspacePathRuntimeUnavailable));
-        assert_eq!(err.ownership(), Some(AgentErrorOwnership::CoraCowork));
+        assert_eq!(err.ownership(), Some(AgentErrorOwnership::Coracowork));
         assert_eq!(
             err.stream_error().workspace_path.as_deref(),
             Some("/Users/test/Archive ")
@@ -1393,7 +1402,7 @@ mod tests {
 
     #[test]
     fn classifies_provider_504_html_body_as_timeout_with_stripped_detail() {
-        let raw = "Corars agent error: Provider error: API error 504: <html>\r\n<head><title>504 Gateway Time-out</title></head>\r\n<body>\r\n<center><h1>504 Gateway Time-out</h1></center>\r\n<hr><center>openresty</center>\r\n</body>\r\n</html>";
+        let raw = "corars agent error: Provider error: API error 504: <html>\r\n<head><title>504 Gateway Time-out</title></head>\r\n<body>\r\n<center><h1>504 Gateway Time-out</h1></center>\r\n<hr><center>openresty</center>\r\n</body>\r\n</html>";
         let err = AgentSendError::from_agent_error(AgentError::bad_gateway(raw));
 
         assert_eq!(err.code(), Some(AgentErrorCode::UserLlmProviderTimeout));
@@ -1495,6 +1504,17 @@ mod tests {
                 .map(|resolution| resolution.kind),
             Some(AgentErrorResolutionKind::ReconnectAgent)
         );
+    }
+
+    #[test]
+    fn request_timeout_maps_to_retryable_user_agent_disconnected() {
+        let err = AgentSendError::from(AcpError::RequestTimeout {
+            method: "session/setConfigOption".into(),
+            timeout_secs: 10,
+        });
+        assert_eq!(err.code(), Some(AgentErrorCode::UserAgentDisconnected));
+        assert_eq!(err.ownership(), Some(AgentErrorOwnership::UserAgent));
+        assert_eq!(err.stream_error().retryable, Some(true));
     }
 
     #[test]
@@ -1658,8 +1678,8 @@ mod tests {
         );
 
         for managed_binary_missing in [
-            "expected managed Claude ACP platform binary missing: C:\\Users\\user\\AppData\\Roaming\\cora-cowork\\cora-cowork\\runtime\\acp\\claude-agent-acp\\0.58.1\\win32-x64\\node_modules\\@anthropic-ai\\claude-agent-sdk-win32-x64\\claude.exe",
-            "expected managed Codex ACP platform binary missing: C:\\Users\\user\\AppData\\Roaming\\cora-cowork\\cora-cowork\\runtime\\acp\\codex-acp\\1.1.2\\win32-x64\\node_modules\\@openai\\codex-win32-x64\\vendor\\x86_64-pc-windows-msvc\\bin\\codex.exe",
+            "expected managed Claude ACP platform binary missing: C:\\Users\\user\\AppData\\Roaming\\CoraCowork\\coracowork\\runtime\\acp\\claude-agent-acp\\0.58.1\\win32-x64\\node_modules\\@anthropic-ai\\claude-agent-sdk-win32-x64\\claude.exe",
+            "expected managed Codex ACP platform binary missing: C:\\Users\\user\\AppData\\Roaming\\CoraCowork\\coracowork\\runtime\\acp\\codex-acp\\1.1.2\\win32-x64\\node_modules\\@openai\\codex-win32-x64\\vendor\\x86_64-pc-windows-msvc\\bin\\codex.exe",
         ] {
             assert_classification(
                 managed_binary_missing,
@@ -1685,25 +1705,25 @@ mod tests {
     #[test]
     fn classifies_provider_billing_auth_and_rate_limit() {
         assert_classification(
-            "Corars agent error: Provider error: API error 402: {\"error\":{\"message\":\"Insufficient Balance\"}}",
+            "corars agent error: Provider error: API error 402: {\"error\":{\"message\":\"Insufficient Balance\"}}",
             AgentErrorCode::UserLlmProviderBillingRequired,
             AgentErrorOwnership::UserLlmProvider,
             AgentErrorResolutionKind::CheckProviderBilling,
         );
         assert_classification(
-            "Corars agent error: Provider error: API error 400: {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.\"}}",
+            "corars agent error: Provider error: API error 400: {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.\"}}",
             AgentErrorCode::UserLlmProviderBillingRequired,
             AgentErrorOwnership::UserLlmProvider,
             AgentErrorResolutionKind::CheckProviderBilling,
         );
         assert_classification(
-            "Corars agent error: Provider error: API error 401: invalid x-api-key",
+            "corars agent error: Provider error: API error 401: invalid x-api-key",
             AgentErrorCode::UserLlmProviderAuthFailed,
             AgentErrorOwnership::UserLlmProvider,
             AgentErrorResolutionKind::CheckProviderCredentials,
         );
         assert_classification(
-            "Corars agent error: Provider error: Rate limited, retry after 5000ms",
+            "corars agent error: Provider error: Rate limited, retry after 5000ms",
             AgentErrorCode::UserLlmProviderRateLimited,
             AgentErrorOwnership::UserLlmProvider,
             AgentErrorResolutionKind::Retry,
@@ -1745,13 +1765,13 @@ mod tests {
             AgentErrorResolutionKind::ChangeModel,
         );
         assert_classification(
-            "Corars agent error: provider repeatedly returned malformed tool calls (3/3); stopped to avoid wasting tokens",
+            "corars agent error: provider repeatedly returned malformed tool calls (3/3); stopped to avoid wasting tokens",
             AgentErrorCode::UserLlmProviderInvalidRequest,
             AgentErrorOwnership::UserLlmProvider,
             AgentErrorResolutionKind::ChangeModel,
         );
         assert_resolution_target(
-            "Corars agent error: provider repeatedly returned malformed tool calls (3/3); stopped to avoid wasting tokens",
+            "corars agent error: provider repeatedly returned malformed tool calls (3/3); stopped to avoid wasting tokens",
             AgentErrorResolutionTarget::ProviderSettings,
         );
         assert_classification(
@@ -1781,13 +1801,13 @@ mod tests {
     #[test]
     fn classifies_bedrock_invalid_model_identifier_as_model_not_found() {
         assert_classification(
-            "Corars agent error: Provider error: API error 400: {\"message\":\"The provided model identifier is invalid.\"}",
+            "corars agent error: Provider error: API error 400: {\"message\":\"The provided model identifier is invalid.\"}",
             AgentErrorCode::UserLlmProviderModelNotFound,
             AgentErrorOwnership::UserLlmProvider,
             AgentErrorResolutionKind::ChangeModel,
         );
         assert_resolution_target(
-            "Corars agent error: Provider error: API error 400: {\"message\":\"The provided model identifier is invalid.\"}",
+            "corars agent error: Provider error: API error 400: {\"message\":\"The provided model identifier is invalid.\"}",
             AgentErrorResolutionTarget::ProviderSettings,
         );
     }
@@ -1842,16 +1862,16 @@ mod tests {
             AgentErrorResolutionTarget::ProviderSettings,
         );
         assert_classification(
-            "Corars agent error: API error: Connection error: error decoding response body",
+            "corars agent error: API error: Connection error: error decoding response body",
             AgentErrorCode::UserLlmProviderNetworkError,
             AgentErrorOwnership::UserLlmProvider,
-            AgentErrorResolutionKind::CheckProviderBaseUrl,
+            AgentErrorResolutionKind::Retry,
         );
         assert_classification(
-            "Corars agent error: API error: error sending request for url",
+            "corars agent error: API error: error sending request for url",
             AgentErrorCode::UserLlmProviderNetworkError,
             AgentErrorOwnership::UserLlmProvider,
-            AgentErrorResolutionKind::CheckProviderBaseUrl,
+            AgentErrorResolutionKind::Retry,
         );
         assert_classification(
             "Autocompact failed: Empty response from LLM",
@@ -1863,7 +1883,7 @@ mod tests {
 
     #[test]
     fn classifies_bare_provider_404_as_endpoint_not_found() {
-        let detail = "Corars agent error: Provider error: API error 404: {\"detail\":\"Not Found\"}";
+        let detail = "corars agent error: Provider error: API error 404: {\"detail\":\"Not Found\"}";
         assert_classification(
             detail,
             AgentErrorCode::UserLlmProviderEndpointNotFound,
@@ -1879,8 +1899,8 @@ mod tests {
     fn classifies_cora_cowork_conversation_busy_after_agent_and_provider_checks() {
         assert_classification(
             "Conflict: Conversation is already processing a message",
-            AgentErrorCode::CoraCoworkConversationBusy,
-            AgentErrorOwnership::CoraCowork,
+            AgentErrorCode::CoracoworkConversationBusy,
+            AgentErrorOwnership::Coracowork,
             AgentErrorResolutionKind::WaitForCurrentResponse,
         );
     }

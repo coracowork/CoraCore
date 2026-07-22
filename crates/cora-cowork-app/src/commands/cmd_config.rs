@@ -1,4 +1,4 @@
-﻿//! `coracore config` subcommand: agent-facing automation CLI for Cora config.
+﻿//! `coracore config` subcommand: agent-facing automation CLI for CoraCowork config.
 
 use std::collections::BTreeMap;
 use std::io::{self, Read, Write};
@@ -9,12 +9,12 @@ use serde_json::{Map, Value, json};
 
 use crate::cli::{
     ConfigAgentCustomCommand, ConfigAgentOverridesCommand, ConfigAgentsArgs, ConfigAgentsCommand, ConfigArgs,
-    ConfigAssistantTextCommand, ConfigAssistantsArgs, ConfigAssistantsCommand, ConfigCommand, ConfigCronArgs,
-    ConfigCronCommand, ConfigCronCurrentArgs, ConfigCronCurrentCommand, ConfigCronJobSkillCommand, ConfigCronJobsArgs,
-    ConfigCronJobsCommand, ConfigMcpArgs, ConfigMcpCommand, ConfigMcpOauthCommand, ConfigMcpServersCommand,
-    ConfigProviderModelsCommand, ConfigProvidersArgs, ConfigProvidersCommand, ConfigSettingsArgs,
-    ConfigSettingsClientCommand, ConfigSettingsCommand, ConfigSkillsArgs, ConfigSkillsCommand,
-    ConfigSkillsExternalPathsCommand, ConfigSkillsMarketCommand,
+    ConfigAssistantTextCommand, ConfigAssistantsArgs, ConfigAssistantsCommand, ConfigCommand, ConfigConversationArgs,
+    ConfigConversationCommand, ConfigCronArgs, ConfigCronCommand, ConfigCronCurrentArgs, ConfigCronCurrentCommand,
+    ConfigCronJobSkillCommand, ConfigCronJobsArgs, ConfigCronJobsCommand, ConfigMcpArgs, ConfigMcpCommand,
+    ConfigMcpOauthCommand, ConfigMcpServersCommand, ConfigProviderModelsCommand, ConfigProvidersArgs,
+    ConfigProvidersCommand, ConfigSettingsArgs, ConfigSettingsClientCommand, ConfigSettingsCommand, ConfigSkillsArgs,
+    ConfigSkillsCommand, ConfigSkillsExternalPathsCommand, ConfigSkillsMarketCommand,
 };
 use crate::commands::config_capabilities;
 
@@ -38,6 +38,7 @@ async fn run(args: ConfigArgs) -> Result<(), ConfigError> {
     match args.command {
         ConfigCommand::Capabilities => print_envelope(config_capabilities::data(), meta(None), "config capabilities"),
         ConfigCommand::Context => run_context(&client).await,
+        ConfigCommand::Conversation(args) => run_conversation(&client, args).await,
         ConfigCommand::Assistants(args) => run_assistants(&client, args).await,
         ConfigCommand::Skills(args) => run_skills(&client, args).await,
         ConfigCommand::Mcp(args) => run_mcp(&client, args).await,
@@ -63,6 +64,22 @@ async fn run_context(client: &reqwest::Client) -> Result<(), ConfigError> {
         meta(None),
         command,
     )
+}
+
+async fn run_conversation(client: &reqwest::Client, args: ConfigConversationArgs) -> Result<(), ConfigError> {
+    match args.command {
+        ConfigConversationCommand::Rename => {
+            run_id_payload_request_with_resource_readback(
+                client,
+                "config conversation rename",
+                Method::PATCH,
+                IdRoute::new("/api/conversations", "", "conversation_id"),
+                IdRoute::new("/api/conversations", "", "conversation_id"),
+                false,
+            )
+            .await
+        }
+    }
 }
 
 async fn run_assistants(client: &reqwest::Client, args: ConfigAssistantsArgs) -> Result<(), ConfigError> {
@@ -1382,7 +1399,7 @@ async fn request_json(
         ConfigError::new(
             ConfigErrorCode::HttpRequestFailed,
             command,
-            "failed to call Cora backend",
+            "failed to call CoraCowork backend",
         )
         .field("path", path)
     })?;
@@ -1392,7 +1409,7 @@ async fn request_json(
         ConfigError::new(
             ConfigErrorCode::ResponseReadFailed,
             command,
-            "failed to read Cora backend response",
+            "failed to read CoraCowork backend response",
         )
         .field("path", path)
     })?;
@@ -1408,7 +1425,7 @@ async fn request_json(
         return Err(ConfigError::new(
             ConfigErrorCode::HttpStatusError,
             command,
-            "Cora backend returned an error status",
+            "CoraCowork backend returned an error status",
         )
         .field("path", path)
         .field("status", status.as_u16().to_string()));
@@ -1429,7 +1446,7 @@ async fn request_json(
         ConfigError::new(
             ConfigErrorCode::ResponseJsonInvalid,
             command,
-            "Cora backend returned invalid JSON",
+            "CoraCowork backend returned invalid JSON",
         )
         .field("path", path)
     })?;
@@ -1465,7 +1482,7 @@ fn extract_api_data(value: Value, command: &str) -> Result<Value, ConfigError> {
     Err(ConfigError::new(
         ConfigErrorCode::HttpStatusError,
         command,
-        "Cora backend returned an unsuccessful response",
+        "CoraCowork backend returned an unsuccessful response",
     ))
 }
 

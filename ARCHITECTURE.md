@@ -17,25 +17,25 @@ It provides HTTP REST APIs and WebSocket real-time events for the CoraCowork des
 
 ```
 ┌─────────────────────────────────────────────────┐
-│                  cora-coworkapp                      │
+│                  cora-cowork-app                      │
 │         (binary entry, router assembly)          │
 ├──────────┬──────────┬──────────┬────────────────┤
 │conversa- │ channel  │  team    │  ... (domain)  │
 │  tion    │          │          │                 │
 ├──────────┴──────────┴──────────┴────────────────┤
-│   cora-coworkauth          cora-coworkrealtime           │
+│   cora-cowork-auth          cora-cowork-realtime           │
 │  (JWT, CSRF, middleware) (WebSocket, events)     │
 ├─────────────────────────────────────────────────┤
-│  cora-coworkdb    cora-coworkapi-types   cora-coworkruntime  │
+│  cora-cowork-db    cora-cowork-api-types   cora-cowork-runtime  │
 │ (repositories) (API contracts)  (runtime/process)│
 ├─────────────────────────────────────────────────┤
-│       cora-coworkcommon          cora-coworkassets       │
+│       cora-cowork-common          cora-cowork-assets       │
 │  (error types, enums, crypto)  (embedded data)   │
 └─────────────────────────────────────────────────┘
 ```
 
-Dependencies flow strictly downward. Domain crates must not depend on cora-coworkapp,
-and cora-coworkcommon has zero internal dependencies.
+Dependencies flow strictly downward. Domain crates must not depend on cora-cowork-app,
+and cora-cowork-common has zero internal dependencies.
 
 ## Crate Hierarchy
 
@@ -47,11 +47,11 @@ Depended on by nearly all other crates. Changes require careful impact assessmen
 
 | Crate | Responsibility |
 |-------|----------------|
-| `cora-coworkcommon` | Shared error types (ApiError), enums, ID generation, crypto utilities, timestamps, pagination |
-| `cora-coworkapi-types` | All HTTP/WebSocket request and response types — the single source of truth for API contracts |
-| `cora-coworkdb` | SQLite database layer, defines Repository traits and implementations |
-| `cora-coworkassets` | Embedded static assets (agent metadata, prompts) |
-| `cora-coworkruntime` | Managed Node, subprocess spawning, PATH enhancement |
+| `cora-cowork-common` | Shared error types (ApiError), enums, ID generation, crypto utilities, timestamps, pagination |
+| `cora-cowork-api-types` | All HTTP/WebSocket request and response types — the single source of truth for API contracts |
+| `cora-cowork-db` | SQLite database layer, defines Repository traits and implementations |
+| `cora-cowork-assets` | Embedded static assets (agent metadata, prompts) |
+| `cora-cowork-runtime` | Managed Node, subprocess spawning, PATH enhancement |
 
 ### Capability
 
@@ -59,8 +59,8 @@ Cross-cutting capabilities used by domain crates.
 
 | Crate | Responsibility |
 |-------|----------------|
-| `cora-coworkauth` | JWT authentication, password hashing, CSRF protection, cookie management, auth middleware |
-| `cora-coworkrealtime` | WebSocket connection management, event broadcasting (BroadcastEventBus), message routing |
+| `cora-cowork-auth` | JWT authentication, password hashing, CSRF protection, cookie management, auth middleware |
+| `cora-cowork-realtime` | WebSocket connection management, event broadcasting (BroadcastEventBus), message routing |
 
 ### Domain
 
@@ -68,24 +68,24 @@ Each crate owns an independent business domain. They remain loosely coupled from
 
 | Crate | Responsibility |
 |-------|----------------|
-| `cora-coworkconversation` | Conversation management, messaging, confirmations, streaming responses |
-| `cora-coworkchannel` | Multi-channel integration (WeChat, DingTalk, Lark), plugin system, pairing sessions |
-| `cora-coworkteam` | Team collaboration, task scheduling, mailbox system |
-| `cora-coworkcron` | Scheduled job execution, cron expressions, event triggering |
-| `cora-coworkfile` | File operations, watching, snapshots, git operations, compression |
-| `cora-coworkoffice` | Office document handling (Excel, PPT, Word), preview, conversion |
-| `cora-coworksystem` | System settings, provider management, version checking, model fetching |
-| `cora-coworkmcp` | MCP protocol integration, OAuth, multi-platform adapters |
-| `cora-coworkai-agent` | Agent lifecycle management, worker task queues, ACP/auxiliary skills |
-| `cora-coworkextension` | Extension registry, hub management, skill discovery and installation |
-| `cora-coworkshell` | Shell command execution, speech-to-text |
-| `cora-coworkassistant` | Assistant configuration and management |
+| `cora-cowork-conversation` | Conversation management, messaging, confirmations, streaming responses |
+| `cora-cowork-channel` | Multi-channel integration (WeChat, DingTalk, Lark), plugin system, pairing sessions |
+| `cora-cowork-team` | Team collaboration, task scheduling, mailbox system |
+| `cora-cowork-cron` | Scheduled job execution, cron expressions, event triggering |
+| `cora-cowork-file` | File operations, watching, snapshots, git operations, compression |
+| `cora-cowork-office` | Office document handling (Excel, PPT, Word), preview, conversion |
+| `cora-cowork-system` | System settings, provider management, version checking, model fetching |
+| `cora-cowork-mcp` | MCP protocol integration, OAuth, multi-platform adapters |
+| `cora-cowork-ai-agent` | Agent lifecycle management, worker task queues, ACP/auxiliary skills |
+| `cora-cowork-extension` | Extension registry, hub management, skill discovery and installation |
+| `cora-cowork-shell` | Shell command execution, speech-to-text |
+| `cora-cowork-assistant` | Assistant configuration and management |
 
 ### Composition
 
 | Crate | Responsibility |
 |-------|----------------|
-| `cora-coworkapp` | Top-level binary entry point, assembles all crates into the Axum server |
+| `cora-cowork-app` | Top-level binary entry point, assembles all crates into the Axum server |
 
 ### Dependency Direction Rules
 
@@ -101,12 +101,12 @@ Composition → Domain → Capability → Foundation
 
 ## Domain Crate Anatomy
 
-Every domain crate follows a consistent internal organization. Using cora-coworkconversation as a reference:
+Every domain crate follows a consistent internal organization. Using cora-cowork-conversation as a reference:
 
 ### Standard Directory Structure
 
 ```
-crates/cora-coworkconversation/src/
+crates/cora-cowork-conversation/src/
 ├── lib.rs       # Module exports, defines the crate's public API
 ├── routes.rs    # HTTP route handlers
 ├── service.rs   # Business logic layer
@@ -197,7 +197,7 @@ Both `data` and `message` are optional fields, omitted from serialization when n
 }
 ```
 
-All response types are defined in `cora-coworkapi-types` — the single source of truth for API contracts.
+All response types are defined in `cora-cowork-api-types` — the single source of truth for API contracts.
 
 ### HTTP Status Code Mapping
 
@@ -260,7 +260,7 @@ Existing inconsistencies will be unified incrementally during related module ite
 
 ### Repository Trait Pattern
 
-All database access goes through trait abstractions defined in `cora-coworkdb`:
+All database access goes through trait abstractions defined in `cora-cowork-db`:
 
 ```rust
 #[async_trait]
@@ -285,21 +285,21 @@ The project has three categories of data types, each with its own home:
 
 | Type | Location | Purpose | Example |
 |------|----------|---------|---------|
-| Row models | `cora-coworkdb/src/models/` | Database row mapping | `ConversationRow` |
-| Params objects | `cora-coworkdb/src/repository/` | Database write parameters | `UpdateConversationParams` |
-| Request/response types | `cora-coworkapi-types` | API contracts and shared DTOs | `CreateConversationRequest`, `ConversationResponse` |
+| Row models | `cora-cowork-db/src/models/` | Database row mapping | `ConversationRow` |
+| Params objects | `cora-cowork-db/src/repository/` | Database write parameters | `UpdateConversationParams` |
+| Request/response types | `cora-cowork-api-types` | API contracts and shared DTOs | `CreateConversationRequest`, `ConversationResponse` |
 
-**The service layer may directly use types from `cora-coworkapi-types`.** This crate contains
+**The service layer may directly use types from `cora-cowork-api-types`.** This crate contains
 pure data structure definitions with no HTTP framework dependencies, essentially serving as a shared DTO layer.
 
-⚠️ **Critical constraint: `cora-coworkapi-types` must not depend on axum, tower, or any HTTP framework.
+⚠️ **Critical constraint: `cora-cowork-api-types` must not depend on axum, tower, or any HTTP framework.
 Only serde and basic type dependencies are allowed.** This is the prerequisite for services to safely use it.
 
 ### Responsibility Boundaries
 
 - **Handler (routes.rs):** Request validation, parameter extraction, error mapping, constructing `ApiResponse`
 - **Service (service.rs):** Business logic, rule validation, orchestrating Repository calls, Row ↔ Response conversion
-- **Repository (cora-coworkdb):** Pure database operations, no business logic
+- **Repository (cora-cowork-db):** Pure database operations, no business logic
 
 The boundary between Handler and Service is defined by **responsibility**, not by types —
 Handlers do not make business decisions, Services do not handle HTTP concerns.
@@ -307,7 +307,7 @@ Handlers do not make business decisions, Services do not handle HTTP concerns.
 ### Migration Management
 
 Using sqlx's embedded migrations (`sqlx::migrate!()`):
-- Migration files are located in `crates/cora-coworkdb/migrations/`
+- Migration files are located in `crates/cora-cowork-db/migrations/`
 - Naming format: `NNN_descriptive_name.sql` (sequential numbering)
 - Migrations run automatically on application startup
 - New tables or schema changes must go through migration files — manual database modifications are forbidden
@@ -317,7 +317,7 @@ Using sqlx's embedded migrations (`sqlx::migrate!()`):
 
 ```
 DbError (database layer)
-  ↓ From trait implementation (cora-coworkdb/src/error.rs)
+  ↓ From trait implementation (cora-cowork-db/src/error.rs)
 ApiError (unified error type)
   ↓ IntoResponse implementation
 HTTP response (status code + ErrorResponse JSON)
@@ -336,7 +336,7 @@ The application uses Axum's `with_state()` pattern for dependency injection in t
 
 **Step 1: Centralized service construction (AppServices)**
 
-`cora-coworkapp` defines `AppServices`, which holds all shared dependencies centrally:
+`cora-cowork-app` defines `AppServices`, which holds all shared dependencies centrally:
 
 ```rust
 pub struct AppServices {
@@ -426,7 +426,7 @@ Key points:
 - **AppServices is the sole service construction center** — all Repository instantiation and Service assembly happens here
 - **RouterState holds only necessary dependencies** — each domain's State includes only the services it uses
 - **Dependencies are passed via `Arc<dyn Trait>`** — enables runtime polymorphism and test substitution
-- **Domain crates do not construct their own dependencies** — they only define what they need (RouterState), `cora-coworkapp` handles assembly
+- **Domain crates do not construct their own dependencies** — they only define what they need (RouterState), `cora-cowork-app` handles assembly
 
 ## Security Model
 
@@ -448,15 +448,15 @@ CORS (local mode only, allows any origin)
 
 - Algorithm: HMAC-SHA256
 - Validity: 24 hours
-- Payload: `user_id`, `username`, `iat`, `exp`, `iss` ("cora-cowork"), `aud` ("cora-coworkwebui")
+- Payload: `user_id`, `username`, `iat`, `exp`, `iss` ("cora-cowork-"), `aud` ("cora-cowork-webui")
 - Secret source priority: environment variable → database → random generation (64 bytes, getrandom)
-- Token extraction priority: `Authorization: Bearer` header → `cora-coworksession` cookie
+- Token extraction priority: `Authorization: Bearer` header → `cora-cowork-session` cookie
 - Supports token blacklist (SHA-256 hash, DashMap storage)
 
 ### CSRF Protection
 
 Uses the Double Submit Cookie pattern:
-- Cookie name: `cora-coworkcsrf-token` (not HttpOnly — JavaScript must read it)
+- Cookie name: `cora-cowork-csrf-token` (not HttpOnly — JavaScript must read it)
 - Request header: `x-csrf-token`
 - Validation: cookie value must exactly match header value
 - Safe methods (GET, HEAD, OPTIONS) bypass validation
@@ -472,8 +472,8 @@ Uses the Double Submit Cookie pattern:
 
 | Cookie | HttpOnly | Secure | SameSite | Max-Age |
 |--------|----------|--------|----------|---------|
-| `cora-coworksession` | ✅ | When HTTPS | Strict(HTTPS) / Lax(HTTP) | 30 days |
-| `cora-coworkcsrf-token` | ❌ | When HTTPS | Strict(HTTPS) / Lax(HTTP) | 30 days |
+| `cora-cowork-session` | ✅ | When HTTPS | Strict(HTTPS) / Lax(HTTP) | 30 days |
+| `cora-cowork-csrf-token` | ❌ | When HTTPS | Strict(HTTPS) / Lax(HTTP) | 30 days |
 
 ### Rate Limiting
 
@@ -509,7 +509,7 @@ Enabled via the `--local` startup flag, designed for Electron embedded scenarios
 |-------|----------|-------------------|---------|
 | Unit tests | `#[cfg(test)]` inline in each `.rs` file | None or Mock | Function-level logic verification |
 | Integration tests | `crates/<crate>/tests/` | In-memory SQLite | Service and Repository behavior verification |
-| E2E tests | `crates/cora-coworkapp/tests/` | In-memory SQLite | Full HTTP request chain verification |
+| E2E tests | `crates/cora-cowork-app/tests/` | In-memory SQLite | Full HTTP request chain verification |
 
 ### In-Memory Database
 
@@ -530,7 +530,7 @@ All tests requiring a database use `init_database_memory()`:
 
 ### E2E Test Pattern
 
-`cora-coworkapp/tests/common/mod.rs` provides shared test utilities:
+`cora-cowork-app/tests/common/mod.rs` provides shared test utilities:
 
 ```rust
 // Build the complete application
@@ -589,28 +589,28 @@ Prohibited:
 
 ### Complete Steps for Creating a New Domain Crate
 
-Using `cora-coworkmy-feature` as an example:
+Using `cora-cowork-my-feature` as an example:
 
 **Step 1: Create the crate and register it in the workspace**
 
-1. Create the directory `crates/cora-coworkmy-feature/`
+1. Create the directory `crates/cora-cowork-my-feature/`
 2. Add the workspace member in root `Cargo.toml`:
    ```toml
    members = [
        # ... existing members
-       "crates/cora-coworkmy-feature",
+       "crates/cora-cowork-my-feature",
    ]
    ```
 3. Register in `[workspace.dependencies]` of root `Cargo.toml`:
    ```toml
-   cora-coworkmy-feature = { path = "crates/cora-coworkmy-feature" }
+   cora-cowork-my-feature = { path = "crates/cora-cowork-my-feature" }
    ```
 4. Use `.workspace = true` for shared dependency versions within the crate
 
 **Step 2: Write the crate following the standard structure**
 
 ```
-crates/cora-coworkmy-feature/
+crates/cora-cowork-my-feature/
 ├── Cargo.toml
 ├── src/
 │   ├── lib.rs        # Export my_feature_routes, MyFeatureService, MyFeatureRouterState
@@ -621,21 +621,21 @@ crates/cora-coworkmy-feature/
     └── my_feature_test.rs
 ```
 
-**Step 3: If database access is needed, add to cora-coworkdb**
+**Step 3: If database access is needed, add to cora-cowork-db**
 
 1. Add Row model in `models/`
 2. Define Repository trait (`I` prefix) and Sqlite implementation in `repository/`
 3. Add migration file in `migrations/` (`NNN_descriptive_name.sql`)
 
-**Step 4: If API types are needed, add to cora-coworkapi-types**
+**Step 4: If API types are needed, add to cora-cowork-api-types**
 
-Define request/response types in `cora-coworkapi-types` to keep API contracts centrally managed.
+Define request/response types in `cora-cowork-api-types` to keep API contracts centrally managed.
 
-**Step 5: Wire into cora-coworkapp**
+**Step 5: Wire into cora-cowork-app**
 
-1. Add dependency in `cora-coworkapp/Cargo.toml`:
+1. Add dependency in `cora-cowork-app/Cargo.toml`:
    ```toml
-   cora-coworkmy-feature.workspace = true
+   cora-cowork-my-feature.workspace = true
    ```
 
 2. Add field to `ModuleStates`:
@@ -675,8 +675,8 @@ Define request/response types in `cora-coworkapi-types` to keep API contracts ce
 Before adding a new crate, confirm:
 - [ ] Crate internal structure follows the standard pattern (lib/routes/service/state)
 - [ ] Dependency direction is correct (does not depend on upper-layer or same-layer concrete implementations)
-- [ ] Repository trait defined in cora-coworkdb, implementation uses Sqlite prefix
-- [ ] API types defined in cora-coworkapi-types
+- [ ] Repository trait defined in cora-cowork-db, implementation uses Sqlite prefix
+- [ ] API types defined in cora-cowork-api-types
 - [ ] Routes use `/api/` prefix with kebab-case resource names
 - [ ] Includes corresponding test files
 - [ ] WebSocket events follow `domain.camelCaseAction` naming convention
@@ -686,14 +686,14 @@ Before adding a new crate, confirm:
 ### Managed Node Runtime
 
 Builtin ACP adapters run through the managed Node runtime in
-`crates/cora-coworkruntime/src/node_runtime/`. Packaged builds activate Node
+`crates/cora-cowork-runtime/src/node_runtime/`. Packaged builds activate Node
 from the managed-resources bundle; download-mode builds install the pinned
 runtime under `{data_dir}/runtime/node`. Adapter commands carry an explicit
 Node executable and do not depend on the ambient `PATH`.
 
 ### Startup PATH Enhancement
 
-`fn main()` calls `cora-cowork_runtime::enhance_process_path()` **before** the
+`fn main()` calls `cora-cowork-_runtime::enhance_process_path()` **before** the
 tokio runtime starts, so every downstream `which::which(...)` and
 `Command::new(...)` — including the existing spawn sites across the
 workspace — inherits an enriched `PATH`. Three layers are merged in priority
@@ -709,8 +709,8 @@ logged at `info` level).
 ### Subprocess Spawn Builder
 
 New subprocess spawn sites should go through
-`cora-cowork_runtime::Builder::agent(program)` (for long-running agent CLIs
-whose stdio the caller owns) or `cora-cowork_runtime::Builder::clean_cli(program)`
+`cora-cowork-_runtime::Builder::agent(program)` (for long-running agent CLIs
+whose stdio the caller owns) or `cora-cowork-_runtime::Builder::clean_cli(program)`
 (for short-lived tools whose output we parse). Both set
 `kill_on_drop(true)` and strip `NODE_OPTIONS`/`NODE_INSPECT`/`NODE_DEBUG`/
 `CLAUDECODE` so debug-profile env doesn't leak into the child.

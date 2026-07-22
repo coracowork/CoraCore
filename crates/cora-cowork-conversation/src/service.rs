@@ -14,7 +14,6 @@ use crate::message_cursor::{decode_message_cursor, encode_message_cursor};
 use crate::runtime_completion::RuntimeCompletionPublisher;
 use crate::runtime_persistence::{RuntimePersistenceCoordinator, RuntimeWriteKind};
 use crate::runtime_state::ConversationRuntimeStateService;
-use chrono::Datelike;
 use cora_cowork_api_types::{
     ApprovalCheckResponse, AssistantConversationOverridesRequest, CancelConversationResponse, CloneConversationRequest,
     ConfirmRequest, ConfirmationListResponse, ConversationArtifactKind, ConversationArtifactListResponse,
@@ -40,9 +39,8 @@ use cora_cowork_db::{
 use cora_cowork_extension::AssistantRuleDispatcher;
 use cora_cowork_mcp::{AcpMcpCapabilities, parse_acp_mcp_capabilities};
 use cora_cowork_realtime::EventBroadcaster;
-use cora_cowork_runtime::{
-    RuntimeCommandProbe, probe_node_runtime_supported, probe_runtime_command, resolve_command_path,
-};
+use cora_cowork_runtime::{RuntimeCommandProbe, probe_node_runtime_supported, probe_runtime_command, resolve_command_path};
+use chrono::Datelike;
 use std::collections::{HashMap, HashSet};
 use std::time::Duration;
 use tracing::{debug, error, info, warn};
@@ -52,7 +50,7 @@ use crate::convert::{
     row_to_message_response_compact, row_to_response, row_to_response_with_extra, search_row_to_item, string_to_enum,
 };
 use crate::error::ConversationError;
-use crate::session_context::SessionContextBuilder;
+use crate::session_context::{CorarsRuntimePermissionSeed, SessionContextBuilder};
 use crate::skill_resolver::SkillResolver;
 use crate::skill_snapshot::{backfill_skills_if_missing, compute_initial_skills};
 use crate::turn_orchestrator::{ConversationTurnOrchestrator, ConversationTurnStatus, TurnStartInput};
@@ -696,7 +694,7 @@ impl ConversationService {
     ) -> Result<ConversationResponse, ConversationError> {
         let id = generate_short_id();
         let now = now_ms();
-        let source = req.source.unwrap_or(ConversationSource::CoraCowork);
+        let source = req.source.unwrap_or(ConversationSource::Coracowork);
 
         let mut extra = req.extra;
 
@@ -3219,6 +3217,34 @@ pub(crate) fn agent_error_top_level_code(error: &AgentError) -> &'static str {
 }
 
 impl ConversationService {
+    /// Loads the persisted runtime permission gate inputs for an corars
+    /// rebuild. Returns `None` for non-corars conversations and for corars
+    /// conversations without a persisted assistant snapshot (assistant-less
+    /// sessions are out of scope — spec §5). This is the only place a
+    /// `conversation_repo` handle is needed, so the seed is computed here and
+    /// threaded into `SessionContextBuilder` (spec §7.3, A-2).
+    async fn load_corars_permission_seed(
+        &self,
+        row: &cora_cowork_db::models::ConversationRow,
+    ) -> Result<Option<CorarsRuntimePermissionSeed>, ConversationError> {
+        if row.r#type != AgentType::Corars.serde_name() {
+            return Ok(None);
+        }
+        let snapshot = self
+            .conversation_repo
+            .get_assistant_snapshot(&row.id)
+            .await
+            .map_err(|e| {
+                ConversationError::internal(format!(
+                    "Failed to load assistant snapshot for corars permission seed: {e}"
+                ))
+            })?;
+        Ok(snapshot.map(|snapshot| CorarsRuntimePermissionSeed {
+            default_permission_mode: snapshot.default_permission_mode,
+            resolved_permission_value: snapshot.resolved_permission_value,
+        }))
+    }
+
     /// Build typed agent runtime context from a conversation database row.
     ///
     /// Raw `conversation.extra` parsing lives in [`SessionContextBuilder`]
@@ -3229,8 +3255,9 @@ impl ConversationService {
         row: &cora_cowork_db::models::ConversationRow,
     ) -> Result<BuildTaskOptions, ConversationError> {
         reject_deprecated_runtime_row(row)?;
+        let seed = self.load_corars_permission_seed(row).await?;
         SessionContextBuilder::new(&self.workspace_root, &self.agent_metadata_repo, &self.acp_session_repo)
-            .build_options(row)
+            .build_options(row, seed)
             .await
     }
 
@@ -3240,8 +3267,9 @@ impl ConversationService {
         workspace_override: Option<&str>,
     ) -> Result<BuildTaskOptions, ConversationError> {
         reject_deprecated_runtime_row(row)?;
+        let seed = self.load_corars_permission_seed(row).await?;
         SessionContextBuilder::new(&self.workspace_root, &self.agent_metadata_repo, &self.acp_session_repo)
-            .build_options_with_workspace_override(row, workspace_override)
+            .build_options_with_workspace_override(row, workspace_override, seed)
             .await
     }
 
@@ -3780,10 +3808,7 @@ fn upsert_conversation_mcp_status(
     statuses.push(status);
 }
 
-fn classify_repo_mcp_status(
-    row: &cora_cowork_db::models::McpServerRow,
-    support: McpSupportPolicy,
-) -> ConversationMcpStatus {
+fn classify_repo_mcp_status(row: &cora_cowork_db::models::McpServerRow, support: McpSupportPolicy) -> ConversationMcpStatus {
     if !support.supports_row_transport(&row.transport_type) {
         return ConversationMcpStatus {
             id: row.id.clone(),
@@ -4096,7 +4121,7 @@ mod tests {
 
     #[test]
     fn enum_to_db_source() {
-        assert_eq!(enum_to_db(&ConversationSource::CoraCowork).unwrap(), "coracowork");
+        assert_eq!(enum_to_db(&ConversationSource::Coracowork).unwrap(), "coracowork");
         assert_eq!(enum_to_db(&ConversationSource::Telegram).unwrap(), "telegram");
     }
 

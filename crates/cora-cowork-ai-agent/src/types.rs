@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
+use cora_config::compat::OpenAiApiMode;
+use cora_types::message::ImageInputCapability;
 use serde::{Deserialize, Serialize};
 
 use crate::session_context::AgentSessionContext;
@@ -111,6 +113,8 @@ impl RuntimeCapabilities {
 /// Provider-specific compat overrides resolved in the factory.
 #[derive(Debug, Clone, Default)]
 pub struct CorarsCompatOverrides {
+    pub(crate) openai_api_mode: Option<OpenAiApiMode>,
+    pub(crate) image_input: Option<ImageInputCapability>,
     pub max_tokens_field: Option<String>,
     pub api_path: Option<String>,
 }
@@ -128,7 +132,8 @@ pub struct CorarsResolvedConfig {
     pub base_url: Option<String>,
     /// System prompt override.
     pub system_prompt: Option<String>,
-    /// Optional max tokens per response.
+    /// Internal response cap for specialized flows such as provider health probes.
+    /// Normal CoraCowork conversations leave this unset.
     pub max_tokens: Option<u32>,
     /// Max agentic turns.
     pub max_turns: Option<usize>,
@@ -373,7 +378,6 @@ mod tests {
         let extra: CorarsBuildExtra = serde_json::from_value(json).unwrap();
         assert!(extra.system_prompt.is_none());
         assert!(extra.preset_rules.is_none());
-        assert_eq!(extra.max_tokens, None);
         assert!(extra.max_turns.is_none());
         assert!(extra.max_tool_call_malformed_turns.is_none());
         assert!(extra.max_tool_call_failure_turns.is_none());
@@ -389,18 +393,17 @@ mod tests {
             "max_tool_call_failure_turns": 3
         });
         let extra: CorarsBuildExtra = serde_json::from_value(json).unwrap();
-        assert_eq!(extra.system_prompt.unwrap(), "You are a helpful assistant.");
-        assert_eq!(extra.max_tokens, Some(4096));
+        assert_eq!(extra.system_prompt.as_deref(), Some("You are a helpful assistant."));
         assert_eq!(extra.max_turns.unwrap(), 10);
         assert_eq!(extra.max_tool_call_malformed_turns.unwrap(), 2);
         assert_eq!(extra.max_tool_call_failure_turns.unwrap(), 3);
+        assert!(serde_json::to_value(extra).unwrap().get("max_tokens").is_none());
     }
 
     #[test]
     fn corars_build_extra_serde_with_preset_rules() {
         let json = json!({
-            "preset_rules": "You are a data analyst.",
-            "max_tokens": 8192
+            "preset_rules": "You are a data analyst."
         });
         let extra: CorarsBuildExtra = serde_json::from_value(json).unwrap();
         assert!(extra.system_prompt.is_none());

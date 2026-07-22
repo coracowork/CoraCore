@@ -9,17 +9,16 @@ use cora_agent::bootstrap::AgentBootstrap;
 use cora_agent::engine::AgentEngine;
 use cora_agent::output::OutputSink;
 use cora_agent::session::Session;
-use cora_config::config::{CliArgs, Config, McpServerConfig};
+use cora_config::compat::ProviderCompat;
+use cora_config::config::{CliArgs, Config, McpServerConfig, ProviderType};
+use cora_mcp::manager::McpManager;
+use cora_protocol::commands::{ApprovalScope, SessionMode};
+use cora_protocol::{ToolApprovalManager, ToolApprovalResult};
 use cora_cowork_api_types::{
     AcpConfigOptionDto, AcpConfigSelectOptionDto, AgentModeResponse, ConfigOptionConfirmation,
     GetConfigOptionsResponse, SetConfigOptionResponse, SlashCommandItem,
 };
-use cora_cowork_common::{
-    AgentKillReason, AgentType, Confirmation, ConversationStatus, ErrorChain, TimestampMs, now_ms,
-};
-use cora_mcp::manager::McpManager;
-use cora_protocol::commands::{ApprovalScope, SessionMode};
-use cora_protocol::{ToolApprovalManager, ToolApprovalResult};
+use cora_cowork_common::{AgentKillReason, AgentType, Confirmation, ConversationStatus, ErrorChain, TimestampMs, now_ms};
 use serde_json::Value;
 use tokio::sync::{Mutex, Notify, broadcast};
 use tokio::time::timeout;
@@ -29,13 +28,33 @@ use crate::agent_runtime::AgentRuntime;
 use crate::agent_task::IAgentTask;
 use crate::capability::backend_output_sink::BackendOutputSink;
 use crate::capability::backend_protocol_sink::BackendProtocolSink;
+use crate::capability::image_input::resolve_image_input_capability;
 use crate::dev_prompt_dump::{AgentFinalInputDump, dump_agent_final_input};
 use crate::error::AgentError;
 use crate::protocol::events::AgentStreamEvent;
 use crate::protocol::send_error::AgentSendError;
 use crate::types::{CorarsResolvedConfig, SendMessageData};
 
+use super::content::build_content_blocks;
 use super::error::{corars_engine_error_to_send_error, corars_runtime_error_summary};
+
+fn resolve_cora_cowork_config(cli_args: &CliArgs) -> Result<Config, AgentError> {
+    let mut config =
+        Config::resolve(cli_args).map_err(|e| AgentError::internal(format!("Config resolve failed: {e}")))?;
+
+    // CoraCowork owns the embedded runtime policy. Standalone corars max-token
+    // settings must not leak in from global or workspace config files.
+    config.max_tokens = None;
+    let default_transport = match config.provider {
+        ProviderType::Anthropic | ProviderType::Vertex => ProviderCompat::anthropic_defaults().transport,
+        ProviderType::OpenAI => ProviderCompat::openai_defaults().transport,
+        ProviderType::Bedrock => ProviderCompat::bedrock_defaults().transport,
+    };
+    config.compat.transport.default_max_tokens = default_transport.default_max_tokens;
+    config.compat.transport.model_max_tokens = default_transport.model_max_tokens;
+
+    Ok(config)
+}
 
 #[derive(Clone, Debug)]
 struct CorarsFinalInputDumpContext {
@@ -125,6 +144,22 @@ impl CorarsAgentManager {
         let runtime = AgentRuntime::new(conversation_id.clone(), workspace.clone(), 128);
         let sink: Arc<dyn OutputSink> = Arc::new(BackendOutputSink::new(runtime.event_sender()));
         let runtime_env = config_extra.runtime_env.clone();
+        let image_input_override = config_extra.compat_overrides.image_input;
+        let image_input_capability = image_input_override.unwrap_or_else(|| {
+            resolve_image_input_capability(
+                &config_extra.provider,
+                config_extra.base_url.as_deref(),
+                &config_extra.model,
+            )
+        });
+        info!(
+            conversation_id = %conversation_id,
+            provider = %config_extra.provider,
+            model = %config_extra.model,
+            image_input_capability = ?image_input_capability,
+            image_input_source = if image_input_override.is_some() { "provider_settings" } else { "catalog" },
+            "Resolved image input capability for Corars model"
+        );
         let final_input_dump = config_extra
             .prompt_dump_dir
             .clone()
@@ -145,7 +180,7 @@ impl CorarsAgentManager {
             api_key: Some(config_extra.api_key.clone()),
             base_url: config_extra.base_url.clone(),
             model: Some(config_extra.model.clone()),
-            max_tokens: config_extra.max_tokens,
+            max_tokens: None,
             max_turns: config_extra.max_turns,
             max_tool_call_malformed_turns: config_extra.max_tool_call_malformed_turns,
             max_tool_call_failure_turns: config_extra.max_tool_call_failure_turns,
@@ -157,14 +192,17 @@ impl CorarsAgentManager {
             project_dir: Some(PathBuf::from(&workspace)),
         };
 
-        let mut config =
-            Config::resolve(&cli_args).map_err(|e| AgentError::internal(format!("Config resolve failed: {e}")))?;
+        let mut config = resolve_cora_cowork_config(&cli_args)?;
 
         // Backend-specific overrides
         config.bedrock = config_extra.bedrock_config;
         config.session.enabled = true;
         config.session.directory = config_extra.session_directory.to_string_lossy().into_owned();
+        config.compat.image_input = Some(image_input_capability);
 
+        if let Some(mode) = config_extra.compat_overrides.openai_api_mode {
+            config.compat.transport.openai_api_mode = Some(mode);
+        }
         if let Some(field) = config_extra.compat_overrides.max_tokens_field {
             config.compat.transport.max_tokens_field = Some(field);
         }
@@ -360,12 +398,16 @@ impl IAgentTask for CorarsAgentManager {
             attachment_count = data.files.len(),
             "Building structured Corars content blocks"
         );
+        let content_blocks = build_content_blocks(&data.content, &data.files);
+        debug!(
+            block_count = content_blocks.len(),
+            "Built structured Corars content blocks"
+        );
 
         let mut engine = self.engine.lock().await;
 
-        let user_input = data.content.clone();
         let result = tokio::select! {
-            res = engine.run(&user_input, &data.msg_id) => Some(res),
+            res = engine.run_with_blocks(content_blocks, &data.msg_id) => Some(res),
             _ = self.cancel_notify.notified() => {
                 info!(
                     conversation_id = %self.runtime.conversation_id(),

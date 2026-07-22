@@ -458,7 +458,7 @@ impl AgentRegistry {
     /// probe rules.
     ///
     /// Reasons are only attached to rows whose `available` flag is
-    /// `false`. Internal rows (e.g. the Corars row) intentionally
+    /// `false`. Internal rows (e.g. the corars row) intentionally
     /// have an empty `command`, so the underlying probe always
     /// reports `NoCommand` for them — surfacing that as a "reason"
     /// when `available = true` would just confuse the caller, so we
@@ -803,7 +803,7 @@ fn probe_with_reason(meta: &AgentMetadata) -> (Option<PathBuf>, Option<Unavailab
 
 /// Emit a single per-row line summarizing the probe outcome. Available
 /// rows go to `debug!` (one per startup × N agents is noisy at info);
-/// unavailable rows go to `info!` so the default Coracore.log surfaces
+/// unavailable rows go to `info!` so the default coracore.log surfaces
 /// the reason without needing `--log-level debug` after a user
 /// reports "no agent works".
 fn log_probe_result(meta: &AgentMetadata, reason: &Option<UnavailableReason>) {
@@ -1326,7 +1326,7 @@ mod tests {
         // when none of the CLIs are installed on the test host.
         let reg = registry().await;
         let all = reg.list_all_including_hidden().await;
-        assert_eq!(all.len(), 22);
+        assert_eq!(all.len(), 40);
     }
 
     #[tokio::test]
@@ -1367,12 +1367,12 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn pi_builtin_uses_pinned_acp_adapter_and_requires_pi_cli() {
+    async fn pi_builtin_uses_stable_acp_adapter_and_requires_pi_cli() {
         let reg = registry().await;
         let pi = reg.find_builtin_by_backend("pi").await.unwrap();
 
         assert_eq!(pi.command.as_deref(), Some("npx"));
-        assert_eq!(pi.args, ["-y", "pi-acp@0.0.31"]);
+        assert_eq!(pi.args, ["-y", "pi-acp"]);
         assert_eq!(pi.agent_source_info.binary_name.as_deref(), Some("pi"));
         assert_eq!(pi.agent_source_info.bridge_binary.as_deref(), Some("npx"));
         assert_eq!(pi.native_skills_dirs.as_deref(), Some(&[".pi/skills".to_owned()][..]));
@@ -1386,6 +1386,23 @@ mod tests {
                 .and_then(serde_json::Value::as_bool),
             Some(true)
         );
+    }
+
+    #[tokio::test]
+    async fn every_builtin_npx_agent_has_a_release_lock() {
+        let reg = registry().await;
+        let all = reg.list_all_including_hidden().await;
+        let mut locked = 0;
+        for meta in all
+            .iter()
+            .filter(|meta| meta.agent_source == AgentSource::Builtin && meta.command.as_deref() == Some("npx"))
+        {
+            let backend = meta.backend.as_deref().expect("builtin npx backend");
+            cora_cowork_runtime::pin_registry_npx_args(backend, &meta.args)
+                .unwrap_or_else(|error| panic!("missing release lock for {backend}: {error}"));
+            locked += 1;
+        }
+        assert_eq!(locked, 11);
     }
 
     /// On a host that has *none* of the seeded CLIs installed, the
@@ -1408,7 +1425,7 @@ mod tests {
         // Cora CLI (internal, no spawn command) is always available.
         assert!(
             visible.iter().any(|m| m.agent_type == AgentType::Corars),
-            "internal Corars row should survive the filter"
+            "internal corars row should survive the filter"
         );
     }
 
@@ -1420,24 +1437,24 @@ mod tests {
         let reg = registry().await;
         let all = reg.list_all_including_hidden().await;
         let count = |t: AgentType| all.iter().filter(|m| m.agent_type == t).count();
-        assert_eq!(count(AgentType::Acp), 19);
+        assert_eq!(count(AgentType::Acp), 37);
         assert_eq!(count(AgentType::Nanobot), 1);
         assert_eq!(count(AgentType::OpenclawGateway), 1);
         assert_eq!(count(AgentType::Corars), 1);
     }
 
     #[tokio::test]
-    async fn Corars_internal_row_is_available_without_command() {
+    async fn corars_internal_row_is_available_without_command() {
         let reg = registry().await;
-        let Corars = reg
+        let corars = reg
             .list_by_agent_type(AgentType::Corars)
             .await
             .into_iter()
             .next()
             .unwrap();
-        assert_eq!(Corars.agent_source, AgentSource::Internal);
-        assert!(Corars.command.is_none());
-        assert!(Corars.available);
+        assert_eq!(corars.agent_source, AgentSource::Internal);
+        assert!(corars.command.is_none());
+        assert!(corars.available);
     }
 
     #[tokio::test]
@@ -1530,7 +1547,7 @@ mod tests {
     async fn diagnostic_snapshot_pairs_rows_with_reasons() {
         let reg = registry().await;
         let snapshot = reg.diagnostic_snapshot().await;
-        assert_eq!(snapshot.len(), 22, "every row appears once");
+        assert_eq!(snapshot.len(), 40, "every row appears once");
 
         for (meta, reason) in &snapshot {
             match (meta.available, reason) {
@@ -1545,15 +1562,15 @@ mod tests {
             }
         }
 
-        // The internal Corars row is always available — its reason
+        // The internal corars row is always available — its reason
         // slot must be None (sanity check that "available" doesn't
         // accidentally co-occur with a reason).
-        let Corars = snapshot
+        let corars = snapshot
             .iter()
             .find(|(m, _)| m.agent_type == AgentType::Corars)
-            .expect("Corars seed row");
-        assert!(Corars.0.available);
-        assert!(Corars.1.is_none());
+            .expect("corars seed row");
+        assert!(corars.0.available);
+        assert!(corars.1.is_none());
     }
 
     /// An empty snapshot is a no-op — no column gets overwritten.
@@ -1650,7 +1667,7 @@ mod tests {
     }
 
     #[test]
-    fn decode_row_ignores_internal_Cora_cli_overrides() {
+    fn decode_row_ignores_internal_cora_cli_overrides() {
         use cora_cowork_db::AgentMetadataRow;
         let row = AgentMetadataRow {
             id: "632f31d2".to_string(),
@@ -1660,7 +1677,7 @@ mod tests {
             description: None,
             description_i18n: None,
             backend: None,
-            agent_type: "Corars".to_string(),
+            agent_type: "corars".to_string(),
             agent_source: "internal".to_string(),
             agent_source_info: None,
             enabled: true,

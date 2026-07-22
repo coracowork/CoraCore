@@ -22,7 +22,7 @@ struct Capture {
 type SharedCapture = Arc<Mutex<Option<Capture>>>;
 
 fn config_command() -> Command {
-    let mut command = Command::new(env!("CARGO_BIN_EXE_coracore"));
+    let mut command = Command::new(env!("CARGO_BIN_EXE_CORACORE"));
     command.arg("config");
     command
 }
@@ -40,6 +40,26 @@ async fn fake_context_conversation(Path(id): Path<String>) -> axum::Json<serde_j
                 "avatar": "",
                 "backend": "codex"
             },
+            "extra": {}
+        }
+    }))
+}
+
+async fn fake_conversation_rename(
+    State(capture): State<SharedCapture>,
+    Path(id): Path<String>,
+    axum::Json(payload): axum::Json<serde_json::Value>,
+) -> axum::Json<serde_json::Value> {
+    *capture.lock().unwrap() = Some(Capture {
+        resource_id: Some(id.clone()),
+        payload: Some(payload),
+        ..Capture::default()
+    });
+    axum::Json(json!({
+        "success": true,
+        "data": {
+            "id": id,
+            "name": "Renamed conversation",
             "extra": {}
         }
     }))
@@ -341,7 +361,10 @@ async fn spawn_config_probe_server(capture: SharedCapture) -> (String, tokio::ta
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
     let app = axum::Router::new()
-        .route("/api/conversations/{id}", get(fake_context_conversation))
+        .route(
+            "/api/conversations/{id}",
+            get(fake_context_conversation).patch(fake_conversation_rename),
+        )
         .route("/api/skills/assistant-rule/read", post(fake_assistant_rule_read))
         .route("/api/skills/assistant-rule/write", post(fake_assistant_rule_write))
         .route("/api/internal/conversation-cron/list", get(fake_conversation_cron_list))
@@ -521,6 +544,55 @@ async fn config_provider_update_reads_collection_before_and_after_write() {
     let stdout: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
     assert!(stdout["meta"]["before"].is_array());
     assert!(stdout["meta"]["after"].is_array());
+}
+
+#[tokio::test]
+async fn config_conversation_rename_patches_name_and_reads_resource_before_and_after() {
+    let capture = Arc::new(Mutex::new(None));
+    let (base_url, handle) = spawn_config_probe_server(capture.clone()).await;
+
+    let mut child = config_command()
+        .args(["conversation", "rename"])
+        .env("CORA_COWORK_BASE_URL", &base_url)
+        .env("CORA_COWORK_CONVERSATION_ID", "conv-current")
+        .env("CORA_COWORK_USER_ID", "user-rename")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    child
+        .stdin
+        .as_mut()
+        .unwrap()
+        .write_all(br#"{ "conversation_id": "conv-target", "name": "New Title" }"#)
+        .await
+        .unwrap();
+    drop(child.stdin.take());
+
+    let output = child.wait_with_output().await.unwrap();
+
+    handle.abort();
+    assert!(
+        output.status.success(),
+        "conversation rename failed\nstdout:\n{}\nstderr:\n{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let captured = capture
+        .lock()
+        .unwrap()
+        .take()
+        .expect("server should receive conversation rename");
+    // The id selector is extracted from the payload and moved into the path,
+    // leaving only the update body forwarded to PATCH.
+    assert_eq!(captured.resource_id.as_deref(), Some("conv-target"));
+    let payload = captured.payload.unwrap();
+    assert_eq!(payload.get("name").and_then(|v| v.as_str()), Some("New Title"));
+    assert!(payload.get("conversation_id").is_none());
+    let stdout: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert!(stdout["meta"]["before"].is_object());
+    assert!(stdout["meta"]["after"].is_object());
 }
 
 #[tokio::test]

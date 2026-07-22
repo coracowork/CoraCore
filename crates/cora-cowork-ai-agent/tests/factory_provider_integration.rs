@@ -6,7 +6,7 @@ use cora_cowork_ai_agent::AcpSkillManager;
 use cora_cowork_ai_agent::factory::{AgentFactoryDeps, build_agent_factory};
 use cora_cowork_ai_agent::registry::AgentRegistry;
 use cora_cowork_ai_agent::session_context::{
-    AgentSessionContext, AgentSessionKind, ConversationContext, CorarsSessionBuildContext, WorkspaceContext,
+    AgentSessionContext, AgentSessionKind, CorarsSessionBuildContext, ConversationContext, WorkspaceContext,
 };
 use cora_cowork_ai_agent::types::BuildTaskOptions;
 use cora_cowork_api_types::CorarsBuildExtra;
@@ -53,6 +53,7 @@ async fn insert_test_provider(repo: &dyn IProviderRepository, id: &str, platform
         model_protocols: None,
         model_enabled: None,
         model_health: None,
+        model_settings: "{}",
         bedrock_config: None,
         is_full_url: false,
     })
@@ -154,10 +155,7 @@ async fn corars_factory_resolves_provider_from_db() {
             model: "gpt-4o".into(),
             use_model: None,
         },
-        CorarsBuildExtra {
-            max_tokens: Some(2048),
-            ..Default::default()
-        },
+        CorarsBuildExtra::default(),
     );
 
     let result = factory(options).await;
