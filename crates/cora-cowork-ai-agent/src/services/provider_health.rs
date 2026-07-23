@@ -230,9 +230,6 @@ async fn build_probe_engine(config_extra: CorarsResolvedConfig) -> Result<AgentE
     if let Some(image_input) = config_extra.compat_overrides.image_input {
         config.compat.image_input = Some(image_input);
     }
-    if let Some(mode) = config_extra.compat_overrides.openai_api_mode {
-        config.compat.openai_api_mode = Some(mode);
-    }
     if let Some(field) = config_extra.compat_overrides.max_tokens_field {
         config.compat.transport.max_tokens_field = Some(field);
     }
@@ -333,7 +330,7 @@ pub(crate) fn extract_http_status(message: &str) -> Option<u16> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use cora_config::compat::OpenAiApiMode;
+    use crate::types::OpenAiApiMode;
     use cora_cowork_common::encrypt_string;
     use cora_cowork_db::{CreateProviderParams, DbError, UpdateProviderParams};
 

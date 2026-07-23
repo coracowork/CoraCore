@@ -13,6 +13,15 @@ pub(crate) enum ImageInputCapability {
     Unknown,
 }
 
+impl From<ImageInputCapability> for cora_types::message::ImageInputCapability {
+    fn from(value: ImageInputCapability) -> Self {
+        match value {
+            ImageInputCapability::Supported => cora_types::message::ImageInputCapability::Supported,
+            ImageInputCapability::Unknown => cora_types::message::ImageInputCapability::Unknown,
+        }
+    }
+}
+
 const IMAGE_INPUT_CATALOG_SCHEMA_VERSION: u32 = 1;
 const IMAGE_INPUT_CATALOG_JSON: &str = include_str!("../../assets/model-capabilities/image_input_models.json");
 const BEDROCK_INFERENCE_PROFILE_PREFIXES: [&str; 6] = ["us.", "eu.", "apac.", "au.", "jp.", "global."];

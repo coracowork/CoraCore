@@ -1,9 +1,18 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use cora_config::compat::OpenAiApiMode;
 use cora_types::message::ImageInputCapability;
 use serde::{Deserialize, Serialize};
+
+/// Explicit OpenAI wire-API mode for one model.
+///
+/// Mirrors the upstream `cora_config` enum that is not yet released.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+pub(crate) enum OpenAiApiMode {
+    ChatCompletions,
+    #[default]
+    Responses,
+}
 
 use crate::session_context::AgentSessionContext;
 

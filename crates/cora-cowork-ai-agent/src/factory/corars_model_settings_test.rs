@@ -1,4 +1,4 @@
-use cora_config::compat::OpenAiApiMode;
+use crate::types::OpenAiApiMode;
 use cora_types::message::ImageInputCapability;
 
 use crate::capability::image_input::resolve_image_input_capability;

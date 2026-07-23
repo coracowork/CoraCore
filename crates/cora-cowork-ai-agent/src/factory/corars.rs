@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use cora_agent::session::SessionManager;
-use cora_config::compat::OpenAiApiMode;
 use cora_config::config::{McpServerConfig, TransportType};
 use cora_cowork_api_types::{
     CorarsBuildExtra, ModelImageInputCapability, ModelOpenAiApiMode, ModelSettings, SessionMcpServer,
@@ -24,7 +23,7 @@ use crate::factory::context::FactoryContext;
 use crate::manager::corars::{CorarsAgentManager, sanitize_session_messages};
 use crate::runtime_status::conversation_runtime_reporter;
 use crate::session_context::CorarsSessionBuildContext;
-use crate::types::{CorarsCompatOverrides, CorarsResolvedConfig};
+use crate::types::{CorarsCompatOverrides, CorarsResolvedConfig, OpenAiApiMode};
 pub(super) async fn build(
     deps: Arc<AgentFactoryDeps>,
     build_context: CorarsSessionBuildContext,
