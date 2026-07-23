@@ -103,7 +103,7 @@ impl AgentSendError {
             ),
             AgentError::Forbidden(_) => Self::new(
                 " blocked the request before it reached the Agent",
-                AgentErrorCode::PermissionError,
+                AgentErrorCode::CoraCoworkPermissionError,
                 AgentErrorOwnership::CoraCowork,
                 Some(detail),
                 false,

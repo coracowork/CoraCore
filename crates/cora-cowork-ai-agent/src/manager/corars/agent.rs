@@ -149,10 +149,11 @@ impl CorarsAgentManager {
         let image_input_override = config_extra.compat_overrides.image_input;
         let image_input_capability = image_input_override.unwrap_or_else(|| {
             resolve_image_input_capability(
-    &config_extra.provider,
-    config_extra.base_url.as_deref(),
-    &config_extra.model,
-).map(|cap| cap.into()) 
+                &config_extra.provider,
+                config_extra.base_url.as_deref(),
+                &config_extra.model,
+            )
+            .into()
         });
         info!(
             conversation_id = %conversation_id,
@@ -203,7 +204,7 @@ impl CorarsAgentManager {
         config.compat.image_input = Some(image_input_capability);
 
         if let Some(mode) = config_extra.compat_overrides.openai_api_mode {
-            config.compat.transport.openai_api_mode = Some(mode);
+            config.compat.openai_api_mode = Some(mode);
         }
         if let Some(field) = config_extra.compat_overrides.max_tokens_field {
             config.compat.transport.max_tokens_field = Some(field);

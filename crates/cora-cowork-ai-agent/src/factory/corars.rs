@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use cora_agent::session::SessionManager;
-use cora_config::OpenAiApiMode;
+use cora_config::compat::OpenAiApiMode;
 use cora_config::config::{McpServerConfig, TransportType};
 use cora_cowork_api_types::{
     CorarsBuildExtra, ModelImageInputCapability, ModelOpenAiApiMode, ModelSettings, SessionMcpServer,

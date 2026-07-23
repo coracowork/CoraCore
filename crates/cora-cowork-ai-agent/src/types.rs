@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use cora_config::OpenAiApiMode;
+use cora_config::compat::OpenAiApiMode;
 use cora_types::message::ImageInputCapability;
 use serde::{Deserialize, Serialize};
 
