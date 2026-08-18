@@ -8,8 +8,9 @@
 
 use std::sync::Arc;
 
-use cora_cowork_process::{BoxedStdin, BoxedStdout, ManagedProcess, ProcessError, Spawner};
-
+fn extract_error_message(tail: &str) -> Option<String> {
+    tail.lines().last().map(|s| s.to_string())
+}
 use crate::capability::Capabilities;
 use crate::event::{ExitStatusLite, SessionEvent};
 
