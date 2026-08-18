@@ -7,6 +7,8 @@ members = [
     "crates/cora-cowork-api-types",
     "crates/cora-cowork-realtime",
     "crates/cora-cowork-runtime",
+    "crates/cora-cowork-process",
+    "crates/cora-cowork-session",
     "crates/cora-cowork-auth",
     "crates/cora-cowork-system",
     "crates/cora-cowork-file",
@@ -19,6 +21,7 @@ members = [
     "crates/cora-cowork-channel",
     "crates/cora-cowork-team-prompts",
     "crates/cora-cowork-team",
+    "crates/cora-cowork-project",
     "crates/cora-cowork-cron",
     "crates/cora-cowork-assistant",
     "crates/cora-cowork-app",
@@ -37,6 +40,8 @@ cora-cowork-db = { path = "crates/cora-cowork-db" }
 cora-cowork-api-types = { path = "crates/cora-cowork-api-types" }
 cora-cowork-realtime = { path = "crates/cora-cowork-realtime" }
 cora-cowork-runtime = { path = "crates/cora-cowork-runtime" }
+cora-cowork-process = { path = "crates/cora-cowork-process" }
+cora-cowork-session = { path = "crates/cora-cowork-session" }
 cora-cowork-auth = { path = "crates/cora-cowork-auth" }
 cora-cowork-system = { path = "crates/cora-cowork-system" }
 cora-cowork-file = { path = "crates/cora-cowork-file" }
@@ -49,23 +54,23 @@ cora-cowork-extension = { path = "crates/cora-cowork-extension" }
 cora-cowork-channel = { path = "crates/cora-cowork-channel" }
 cora-cowork-team-prompts = { path = "crates/cora-cowork-team-prompts" }
 cora-cowork-team = { path = "crates/cora-cowork-team" }
+cora-cowork-project = { path = "crates/cora-cowork-project" }
 cora-cowork-cron = { path = "crates/cora-cowork-cron" }
 cora-cowork-assistant = { path = "crates/cora-cowork-assistant" }
 cora-cowork-app = { path = "crates/cora-cowork-app" }
 
-# CORARS DEPENDENCIAS - Apontando para os crates individuais
-cora-agent = { path = "../corars-0.2.6/crates/cora-agent" }
-cora-providers = { path = "../corars-0.2.6/crates/cora-providers" }
-cora-types = { path = "../corars-0.2.6/crates/cora-types" }
-cora-protocol = { path = "../corars-0.2.6/crates/cora-protocol" }
-cora-config = { path = "../corars-0.2.6/crates/cora-config" }
-cora-mcp = { path = "../corars-0.2.6/crates/cora-mcp" }
+cora-agent = { git = "https://github.com/coracowork/corars.git", tag = "v0.2.7" }
+cora-providers = { git = "https://github.com/coracowork/corars.git", tag = "v0.2.7" }
+cora-types = { git = "https://github.com/coracowork/corars.git", tag = "v0.2.7" }
+cora-protocol = { git = "https://github.com/coracowork/corars.git", tag = "v0.2.7" }
+cora-config = { git = "https://github.com/coracowork/corars.git", tag = "v0.2.7" }
+cora-mcp = { git = "https://github.com/coracowork/corars.git", tag = "v0.2.7" }
 
 # Core framework
 tokio = { version = "1", features = ["full"] }
 axum = { version = "0.8", features = ["multipart", "ws"] }
 tower = { version = "0.5" }
-tower-http = { version = "0.6", features = ["cors", "trace", "limit"] }
+tower-http = { version = "0.6", features = ["cors", "trace", "limit", "fs"] }
 http = "1"
 
 # Serialization
@@ -102,6 +107,7 @@ aes-gcm = "0.10"
 
 # UUID
 uuid = { version = "1", features = ["v7"] }
+url = "2"
 
 # HTTP client — use rustls with native roots to align backend trust with the host system.
 reqwest = { version = "0.12", features = ["json", "multipart", "rustls-tls-native-roots"], default-features = false }
@@ -130,7 +136,10 @@ notify = "8"
 walkdir = "2"
 ignore = "0.4"
 zip = "2"
-git2 = { version = "0.20", default-features = false }
+git2 = { version = "0.21.0", default-features = false }
+# Source-control discard sends untracked files to the platform trash instead of
+# unlinking them (mac/win/linux, x64 + arm64).
+trash = "5"
 mime_guess = "2"
 rust-embed = "8"
 
@@ -142,10 +151,17 @@ zstd = "0.13"
 cron = "0.15"
 chrono = "0.4"
 chrono-tz = "0.10"
+iana-time-zone = "0.1"
 
 # Shell
 open = "5"
 which = "7"
+# Text-only clipboard. default-features off: `image-data` pulls `image`/`zune-jpeg`
+# which we don't use and currently fails to build. No `wayland-data-control` either:
+# it pulls wl-clipboard-rs → wayland-scanner (build-time) → the vulnerable quick-xml
+# 0.39 (RUSTSEC-2026-0194/0195). Without it, arboard uses its unconditional x11rb
+# backend on Linux (works under X11/XWayland); macOS/Windows unaffected.
+arboard = { version = "3", default-features = false }
 
 # Office
 calamine = "0.36"
@@ -181,19 +197,12 @@ http-body-util = "0.1"
 # Testing
 tempfile = "3"
 wiremock = "0.6"
+proptest = "1"
 
 # Random
 getrandom = "0.2"
 hex = "0.4"
 libc = "0.2"
-
-[patch.crates-io]
-cora-agent = { path = "../corars-0.2.6/crates/cora-agent" }
-cora-providers = { path = "../corars-0.2.6/crates/cora-providers" }
-cora-types = { path = "../corars-0.2.6/crates/cora-types" }
-cora-protocol = { path = "../corars-0.2.6/crates/cora-protocol" }
-cora-config = { path = "../corars-0.2.6/crates/cora-config" }
-cora-mcp = { path = "../corars-0.2.6/crates/cora-mcp" }
 
 # Shrink target/debug: minimal debuginfo, sidecar files, no incremental cache.
 [profile.dev]
