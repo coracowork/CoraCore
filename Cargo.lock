@@ -1092,7 +1092,7 @@ dependencies = [
 [[package]]
 name = "cora-agent"
 version = "0.2.7"
-source = "git+https://github.com/coracowork/corars.git?tag=v0.2.7#6c38d8c87a761bc3b92d7a7cc8932dada1382b52"
+source = "git+https://github.com/coracowork/corars.git?tag=v0.2.7#8568e74ab4f19884602cf9f14865166b05dba0a0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1123,7 +1123,7 @@ dependencies = [
 [[package]]
 name = "cora-compact"
 version = "0.2.7"
-source = "git+https://github.com/coracowork/corars.git?tag=v0.2.7#6c38d8c87a761bc3b92d7a7cc8932dada1382b52"
+source = "git+https://github.com/coracowork/corars.git?tag=v0.2.7#8568e74ab4f19884602cf9f14865166b05dba0a0"
 dependencies = [
  "regex",
  "serde",
@@ -1135,7 +1135,7 @@ dependencies = [
 [[package]]
 name = "cora-config"
 version = "0.2.7"
-source = "git+https://github.com/coracowork/corars.git?tag=v0.2.7#6c38d8c87a761bc3b92d7a7cc8932dada1382b52"
+source = "git+https://github.com/coracowork/corars.git?tag=v0.2.7#8568e74ab4f19884602cf9f14865166b05dba0a0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1773,7 +1773,7 @@ dependencies = [
 [[package]]
 name = "cora-mcp"
 version = "0.2.7"
-source = "git+https://github.com/coracowork/corars.git?tag=v0.2.7#6c38d8c87a761bc3b92d7a7cc8932dada1382b52"
+source = "git+https://github.com/coracowork/corars.git?tag=v0.2.7#8568e74ab4f19884602cf9f14865166b05dba0a0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1794,7 +1794,7 @@ dependencies = [
 [[package]]
 name = "cora-memory"
 version = "0.2.7"
-source = "git+https://github.com/coracowork/corars.git?tag=v0.2.7#6c38d8c87a761bc3b92d7a7cc8932dada1382b52"
+source = "git+https://github.com/coracowork/corars.git?tag=v0.2.7#8568e74ab4f19884602cf9f14865166b05dba0a0"
 dependencies = [
  "chrono",
  "cora-config",
@@ -1808,7 +1808,7 @@ dependencies = [
 [[package]]
 name = "cora-process"
 version = "0.2.7"
-source = "git+https://github.com/coracowork/corars.git?tag=v0.2.7#6c38d8c87a761bc3b92d7a7cc8932dada1382b52"
+source = "git+https://github.com/coracowork/corars.git?tag=v0.2.7#8568e74ab4f19884602cf9f14865166b05dba0a0"
 dependencies = [
  "libc",
  "tokio",
@@ -1819,7 +1819,7 @@ dependencies = [
 [[package]]
 name = "cora-protocol"
 version = "0.2.7"
-source = "git+https://github.com/coracowork/corars.git?tag=v0.2.7#6c38d8c87a761bc3b92d7a7cc8932dada1382b52"
+source = "git+https://github.com/coracowork/corars.git?tag=v0.2.7#8568e74ab4f19884602cf9f14865166b05dba0a0"
 dependencies = [
  "cora-types",
  "serde",
@@ -1832,7 +1832,7 @@ dependencies = [
 [[package]]
 name = "cora-providers"
 version = "0.2.7"
-source = "git+https://github.com/coracowork/corars.git?tag=v0.2.7#6c38d8c87a761bc3b92d7a7cc8932dada1382b52"
+source = "git+https://github.com/coracowork/corars.git?tag=v0.2.7#8568e74ab4f19884602cf9f14865166b05dba0a0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1861,7 +1861,7 @@ dependencies = [
 [[package]]
 name = "cora-skills"
 version = "0.2.7"
-source = "git+https://github.com/coracowork/corars.git?tag=v0.2.7#6c38d8c87a761bc3b92d7a7cc8932dada1382b52"
+source = "git+https://github.com/coracowork/corars.git?tag=v0.2.7#8568e74ab4f19884602cf9f14865166b05dba0a0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1888,7 +1888,7 @@ dependencies = [
 [[package]]
 name = "cora-tools"
 version = "0.2.7"
-source = "git+https://github.com/coracowork/corars.git?tag=v0.2.7#6c38d8c87a761bc3b92d7a7cc8932dada1382b52"
+source = "git+https://github.com/coracowork/corars.git?tag=v0.2.7#8568e74ab4f19884602cf9f14865166b05dba0a0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1910,7 +1910,7 @@ dependencies = [
 [[package]]
 name = "cora-types"
 version = "0.2.7"
-source = "git+https://github.com/coracowork/corars.git?tag=v0.2.7#6c38d8c87a761bc3b92d7a7cc8932dada1382b52"
+source = "git+https://github.com/coracowork/corars.git?tag=v0.2.7#8568e74ab4f19884602cf9f14865166b05dba0a0"
 dependencies = [
  "async-trait",
  "base64",
@@ -3169,7 +3169,7 @@ dependencies = [
  "js-sys",
  "log",
  "wasm-bindgen",
- "windows-core 0.62.2",
+ "windows-core",
 ]
 
 [[package]]
@@ -5538,7 +5538,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd"
 dependencies = [
  "fastrand",
- "getrandom 0.4.3",
+ "getrandom 0.3.4",
  "once_cell",
  "rustix",
  "windows-sys 0.61.2",
@@ -6386,7 +6386,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]
@@ -6401,7 +6401,7 @@ version = "0.56.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1de69df01bdf1ead2f4ac895dc77c9351aefff65b2f3db429a343f9cbf05e132"
 dependencies = [
- "windows-core 0.56.0",
+ "windows-core",
  "windows-targets 0.52.6",
 ]
 
@@ -6411,23 +6411,10 @@ version = "0.56.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4698e52ed2d08f8658ab0c39512a7c00ee5fe2688c65f8c0a4f06750d729f2a6"
 dependencies = [
- "windows-implement 0.56.0",
- "windows-interface 0.56.0",
- "windows-result 0.1.2",
+ "windows-implement",
+ "windows-interface",
+ "windows-result",
  "windows-targets 0.52.6",
-]
-
-[[package]]
-name = "windows-core"
-version = "0.62.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b8e83a14d34d0623b51dce9581199302a221863196a1dde71a7663a4c2be9deb"
-dependencies = [
- "windows-implement 0.60.2",
- "windows-interface 0.59.3",
- "windows-link",
- "windows-result 0.4.1",
- "windows-strings",
 ]
 
 [[package]]
@@ -6442,32 +6429,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "windows-implement"
-version = "0.60.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "053e2e040ab57b9dc951b72c264860db7eb3b0200ba345b4e4c3b14f67855ddf"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.119",
-]
-
-[[package]]
 name = "windows-interface"
 version = "0.56.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "08990546bf4edef8f431fa6326e032865f27138718c587dc21bc0265bbcb57cc"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.119",
-]
-
-[[package]]
-name = "windows-interface"
-version = "0.59.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f316c4a2570ba26bbec722032c4099d8c8bc095efccdc15688708623367e358"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -6487,24 +6452,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5e383302e8ec8515204254685643de10811af0ed97ea37210dc26fb0032647f8"
 dependencies = [
  "windows-targets 0.52.6",
-]
-
-[[package]]
-name = "windows-result"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7781fa89eaf60850ac3d2da7af8e5242a5ea78d1a11c49bf2910bb5a73853eb5"
-dependencies = [
- "windows-link",
-]
-
-[[package]]
-name = "windows-strings"
-version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7837d08f69c77cf6b07689544538e017c1bfcf57e34b4c0ff58e6c2cd3b37091"
-dependencies = [
- "windows-link",
 ]
 
 [[package]]
@@ -6794,7 +6741,7 @@ checksum = "1ebf944e87a7c253233ad6766e082e3cd714b5d03812acc24c318f549614536e"
 [[package]]
 name = "workspace-hack"
 version = "0.1.0"
-source = "git+https://github.com/coracowork/corars.git?tag=v0.2.7#6c38d8c87a761bc3b92d7a7cc8932dada1382b52"
+source = "git+https://github.com/coracowork/corars.git?tag=v0.2.7#8568e74ab4f19884602cf9f14865166b05dba0a0"
 dependencies = [
  "bitflags 2.13.1",
  "cc",
