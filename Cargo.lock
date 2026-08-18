@@ -1077,7 +1077,7 @@ dependencies = [
 [[package]]
 name = "cora-agent"
 version = "0.2.7"
-source = "git+https://github.com/coracowork/corars.git?rev=6c38d8c87a761bc3b92d7a7cc8932dada1382b52#6c38d8c87a761bc3b92d7a7cc8932dada1382b52"
+source = "git+https://github.com/coracowork/corars.git?branch=main#6c38d8c87a761bc3b92d7a7cc8932dada1382b52"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1108,7 +1108,7 @@ dependencies = [
 [[package]]
 name = "cora-compact"
 version = "0.2.7"
-source = "git+https://github.com/coracowork/corars.git?rev=6c38d8c87a761bc3b92d7a7cc8932dada1382b52#6c38d8c87a761bc3b92d7a7cc8932dada1382b52"
+source = "git+https://github.com/coracowork/corars.git?branch=main#6c38d8c87a761bc3b92d7a7cc8932dada1382b52"
 dependencies = [
  "regex",
  "serde",
@@ -1120,7 +1120,7 @@ dependencies = [
 [[package]]
 name = "cora-config"
 version = "0.2.7"
-source = "git+https://github.com/coracowork/corars.git?rev=6c38d8c87a761bc3b92d7a7cc8932dada1382b52#6c38d8c87a761bc3b92d7a7cc8932dada1382b52"
+source = "git+https://github.com/coracowork/corars.git?branch=main#6c38d8c87a761bc3b92d7a7cc8932dada1382b52"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1691,7 +1691,7 @@ dependencies = [
 [[package]]
 name = "cora-mcp"
 version = "0.2.7"
-source = "git+https://github.com/coracowork/corars.git?rev=6c38d8c87a761bc3b92d7a7cc8932dada1382b52#6c38d8c87a761bc3b92d7a7cc8932dada1382b52"
+source = "git+https://github.com/coracowork/corars.git?branch=main#6c38d8c87a761bc3b92d7a7cc8932dada1382b52"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1712,7 +1712,7 @@ dependencies = [
 [[package]]
 name = "cora-memory"
 version = "0.2.7"
-source = "git+https://github.com/coracowork/corars.git?rev=6c38d8c87a761bc3b92d7a7cc8932dada1382b52#6c38d8c87a761bc3b92d7a7cc8932dada1382b52"
+source = "git+https://github.com/coracowork/corars.git?branch=main#6c38d8c87a761bc3b92d7a7cc8932dada1382b52"
 dependencies = [
  "chrono",
  "cora-config",
@@ -1726,7 +1726,7 @@ dependencies = [
 [[package]]
 name = "cora-process"
 version = "0.2.7"
-source = "git+https://github.com/coracowork/corars.git?rev=6c38d8c87a761bc3b92d7a7cc8932dada1382b52#6c38d8c87a761bc3b92d7a7cc8932dada1382b52"
+source = "git+https://github.com/coracowork/corars.git?branch=main#6c38d8c87a761bc3b92d7a7cc8932dada1382b52"
 dependencies = [
  "libc",
  "tokio",
@@ -1737,7 +1737,7 @@ dependencies = [
 [[package]]
 name = "cora-protocol"
 version = "0.2.7"
-source = "git+https://github.com/coracowork/corars.git?rev=6c38d8c87a761bc3b92d7a7cc8932dada1382b52#6c38d8c87a761bc3b92d7a7cc8932dada1382b52"
+source = "git+https://github.com/coracowork/corars.git?branch=main#6c38d8c87a761bc3b92d7a7cc8932dada1382b52"
 dependencies = [
  "cora-types",
  "serde",
@@ -1750,7 +1750,7 @@ dependencies = [
 [[package]]
 name = "cora-providers"
 version = "0.2.7"
-source = "git+https://github.com/coracowork/corars.git?rev=6c38d8c87a761bc3b92d7a7cc8932dada1382b52#6c38d8c87a761bc3b92d7a7cc8932dada1382b52"
+source = "git+https://github.com/coracowork/corars.git?branch=main#6c38d8c87a761bc3b92d7a7cc8932dada1382b52"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1779,7 +1779,7 @@ dependencies = [
 [[package]]
 name = "cora-skills"
 version = "0.2.7"
-source = "git+https://github.com/coracowork/corars.git?rev=6c38d8c87a761bc3b92d7a7cc8932dada1382b52#6c38d8c87a761bc3b92d7a7cc8932dada1382b52"
+source = "git+https://github.com/coracowork/corars.git?branch=main#6c38d8c87a761bc3b92d7a7cc8932dada1382b52"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1806,7 +1806,7 @@ dependencies = [
 [[package]]
 name = "cora-tools"
 version = "0.2.7"
-source = "git+https://github.com/coracowork/corars.git?rev=6c38d8c87a761bc3b92d7a7cc8932dada1382b52#6c38d8c87a761bc3b92d7a7cc8932dada1382b52"
+source = "git+https://github.com/coracowork/corars.git?branch=main#6c38d8c87a761bc3b92d7a7cc8932dada1382b52"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1828,7 +1828,7 @@ dependencies = [
 [[package]]
 name = "cora-types"
 version = "0.2.7"
-source = "git+https://github.com/coracowork/corars.git?rev=6c38d8c87a761bc3b92d7a7cc8932dada1382b52#6c38d8c87a761bc3b92d7a7cc8932dada1382b52"
+source = "git+https://github.com/coracowork/corars.git?branch=main#6c38d8c87a761bc3b92d7a7cc8932dada1382b52"
 dependencies = [
  "async-trait",
  "base64",
@@ -6550,7 +6550,7 @@ checksum = "1ebf944e87a7c253233ad6766e082e3cd714b5d03812acc24c318f549614536e"
 [[package]]
 name = "workspace-hack"
 version = "0.1.0"
-source = "git+https://github.com/coracowork/corars.git?rev=6c38d8c87a761bc3b92d7a7cc8932dada1382b52#6c38d8c87a761bc3b92d7a7cc8932dada1382b52"
+source = "git+https://github.com/coracowork/corars.git?branch=main#6c38d8c87a761bc3b92d7a7cc8932dada1382b52"
 dependencies = [
  "bitflags 2.13.1",
  "cc",
