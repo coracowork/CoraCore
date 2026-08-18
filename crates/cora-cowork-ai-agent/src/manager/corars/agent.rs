@@ -11,16 +11,16 @@ use cora_agent::output::OutputSink;
 use cora_agent::session::Session;
 use cora_config::compat::ProviderCompat;
 use cora_config::config::{CliArgs, Config, McpServerConfig, ProviderType};
-use cora_cowork_api_types::{
-    AcpConfigOptionDto, AcpConfigSelectOptionDto, AgentModeResponse, ConfigOptionConfirmation,
-    GetConfigOptionsResponse, SetConfigOptionResponse, SlashCommandItem,
-};
-use cora_cowork_common::{
-    AgentKillReason, AgentType, Confirmation, ConversationStatus, ErrorChain, TimestampMs, now_ms,
-};
 use cora_mcp::manager::McpManager;
 use cora_protocol::commands::{ApprovalScope, SessionMode};
 use cora_protocol::{ToolApprovalManager, ToolApprovalResult};
+use cora_corwork_api_types::{
+    AcpConfigOptionDto, AcpConfigSelectOptionDto, AgentModeResponse, ConfigOptionConfirmation,
+    GetConfigOptionsResponse, SetConfigOptionResponse, SlashCommandItem,
+};
+use cora_corwork_common::{
+    AgentKillReason, AgentType, Confirmation, ConversationStatus, ErrorChain, TimestampMs, generate_short_id, now_ms,
+};
 use serde_json::Value;
 use tokio::sync::{Mutex, Notify, broadcast};
 use tokio::time::timeout;
@@ -40,7 +40,7 @@ use crate::types::{CorarsResolvedConfig, SendMessageData};
 use super::content::build_content_blocks;
 use super::error::{corars_engine_error_to_send_error, corars_runtime_error_summary};
 
-fn resolve_cora_cowork_config(cli_args: &CliArgs) -> Result<Config, AgentError> {
+fn resolve_cora_corwork_config(cli_args: &CliArgs) -> Result<Config, AgentError> {
     let mut config =
         Config::resolve(cli_args).map_err(|e| AgentError::internal(format!("Config resolve failed: {e}")))?;
 
@@ -194,7 +194,7 @@ impl CorarsAgentManager {
             project_dir: Some(PathBuf::from(&workspace)),
         };
 
-        let mut config = resolve_cora_cowork_config(&cli_args)?;
+        let mut config = resolve_cora_corwork_config(&cli_args)?;
 
         // Backend-specific overrides
         config.bedrock = config_extra.bedrock_config;
@@ -406,7 +406,22 @@ impl IAgentTask for CorarsAgentManager {
             "Built structured Corars content blocks"
         );
 
+        // One anchor for both history stores: the conversation-layer turn id
+        // is stamped onto this turn's DB message rows (BackendTurnBound →
+        // stream persistence, mirroring the codex reader) AND onto the
+        // engine's session messages, so an at-turn fork can cut both at the
+        // same point.
+        let turn_anchor = data
+            .turn_id
+            .clone()
+            .unwrap_or_else(|| format!("turn_{}", generate_short_id()));
+        let _ = self
+            .runtime
+            .event_sender()
+            .send(AgentStreamEvent::BackendTurnBound(turn_anchor.clone()));
+
         let mut engine = self.engine.lock().await;
+        engine.set_next_turn_id(Some(turn_anchor));
 
         let result = tokio::select! {
             res = engine.run_with_blocks(content_blocks, &data.msg_id) => Some(res),
@@ -442,7 +457,7 @@ impl IAgentTask for CorarsAgentManager {
                     "Corars engine.run() failed, emitting Error"
                 );
                 error!(
-                    target: "cora_cowork_feedback_diagnostics",
+                    target: "cora_corwork_feedback_diagnostics",
                     diagnostic_event = "feedback.runtime.corars_error",
                     conversation_id = %self.runtime.conversation_id(),
                     msg_id = %data.msg_id,
@@ -580,7 +595,7 @@ impl CorarsAgentManager {
         let option_id = option_id.trim();
         let value = value.trim();
 
-        if option_id != CORARS_MODE_OPTION_ID {
+        if option_id != AIONRS_MODE_OPTION_ID {
             return Err(AgentError::bad_request(format!(
                 "Config option '{option_id}' is not available"
             )));
@@ -603,7 +618,7 @@ impl CorarsAgentManager {
     }
 }
 
-const CORARS_MODE_OPTION_ID: &str = "mode";
+const AIONRS_MODE_OPTION_ID: &str = "mode";
 
 fn is_corars_session_mode(s: &str) -> bool {
     matches!(s, "default" | "auto_edit" | "yolo")
@@ -611,7 +626,7 @@ fn is_corars_session_mode(s: &str) -> bool {
 
 fn corars_mode_config_option(current_value: String) -> AcpConfigOptionDto {
     AcpConfigOptionDto {
-        id: CORARS_MODE_OPTION_ID.to_owned(),
+        id: AIONRS_MODE_OPTION_ID.to_owned(),
         name: Some("Mode".to_owned()),
         label: None,
         description: None,
