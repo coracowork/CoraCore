@@ -53,6 +53,14 @@ cora-cowork-cron = { path = "crates/cora-cowork-cron" }
 cora-cowork-assistant = { path = "crates/cora-cowork-assistant" }
 cora-cowork-app = { path = "crates/cora-cowork-app" }
 
+# CORARS DEPENDENCIAS - Apontando para os crates individuais
+cora-agent = { path = "../corars-0.2.6/crates/cora-agent" }
+cora-providers = { path = "../corars-0.2.6/crates/cora-providers" }
+cora-types = { path = "../corars-0.2.6/crates/cora-types" }
+cora-protocol = { path = "../corars-0.2.6/crates/cora-protocol" }
+cora-config = { path = "../corars-0.2.6/crates/cora-config" }
+cora-mcp = { path = "../corars-0.2.6/crates/cora-mcp" }
+
 # Core framework
 tokio = { version = "1", features = ["full"] }
 axum = { version = "0.8", features = ["multipart", "ws"] }
@@ -179,22 +187,13 @@ getrandom = "0.2"
 hex = "0.4"
 libc = "0.2"
 
-# CORARS DEPENDENCIAS (adicionado)
-cora-agent = { git = "https://github.com/coracowork/corars.git", rev = "6c38d8c87a761bc3b92d7a7cc8932dada1382b52" }
-cora-providers = { git = "https://github.com/coracowork/corars.git", rev = "6c38d8c87a761bc3b92d7a7cc8932dada1382b52" }
-cora-types = { git = "https://github.com/coracowork/corars.git", rev = "6c38d8c87a761bc3b92d7a7cc8932dada1382b52" }
-cora-protocol = { git = "https://github.com/coracowork/corars.git", rev = "6c38d8c87a761bc3b92d7a7cc8932dada1382b52" }
-cora-config = { git = "https://github.com/coracowork/corars.git", rev = "6c38d8c87a761bc3b92d7a7cc8932dada1382b52" }
-cora-mcp = { git = "https://github.com/coracowork/corars.git", rev = "6c38d8c87a761bc3b92d7a7cc8932dada1382b52" }
-
-# PATCH para resolver problema do submódulo
 [patch.crates-io]
-cora-agent = { git = "https://github.com/coracowork/corars.git", rev = "6c38d8c87a761bc3b92d7a7cc8932dada1382b52" }
-cora-providers = { git = "https://github.com/coracowork/corars.git", rev = "6c38d8c87a761bc3b92d7a7cc8932dada1382b52" }
-cora-types = { git = "https://github.com/coracowork/corars.git", rev = "6c38d8c87a761bc3b92d7a7cc8932dada1382b52" }
-cora-protocol = { git = "https://github.com/coracowork/corars.git", rev = "6c38d8c87a761bc3b92d7a7cc8932dada1382b52" }
-cora-config = { git = "https://github.com/coracowork/corars.git", rev = "6c38d8c87a761bc3b92d7a7cc8932dada1382b52" }
-cora-mcp = { git = "https://github.com/coracowork/corars.git", rev = "6c38d8c87a761bc3b92d7a7cc8932dada1382b52" }
+cora-agent = { path = "../corars-0.2.6/crates/cora-agent" }
+cora-providers = { path = "../corars-0.2.6/crates/cora-providers" }
+cora-types = { path = "../corars-0.2.6/crates/cora-types" }
+cora-protocol = { path = "../corars-0.2.6/crates/cora-protocol" }
+cora-config = { path = "../corars-0.2.6/crates/cora-config" }
+cora-mcp = { path = "../corars-0.2.6/crates/cora-mcp" }
 
 # Shrink target/debug: minimal debuginfo, sidecar files, no incremental cache.
 [profile.dev]
