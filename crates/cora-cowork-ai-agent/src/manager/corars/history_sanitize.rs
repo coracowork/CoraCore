@@ -89,13 +89,11 @@ fn strip_malformed_tool_calls(messages: &mut Vec<Message>) -> usize {
     // Remove malformed ToolUse blocks and their matching ToolResult blocks,
     // and also drop Image and ProviderItem blocks (unused in sanitization).
     for msg in messages.iter_mut() {
-        msg.content.retain(|block| {
-            match block {
-                ContentBlock::ToolUse { id, .. } if malformed_tool_use_ids.contains(id) => false,
-                ContentBlock::ToolResult { tool_use_id, .. } if malformed_tool_use_ids.contains(tool_use_id) => false,
-                ContentBlock::Image { .. } | ContentBlock::ProviderItem { .. } => false,
-                _ => true,
-            }
+        msg.content.retain(|block| match block {
+            ContentBlock::ToolUse { id, .. } if malformed_tool_use_ids.contains(id) => false,
+            ContentBlock::ToolResult { tool_use_id, .. } if malformed_tool_use_ids.contains(tool_use_id) => false,
+            ContentBlock::Image { .. } | ContentBlock::ProviderItem { .. } => false,
+            _ => true,
         });
     }
 

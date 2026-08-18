@@ -11,7 +11,9 @@ async fn open_old_db_and_decrypt_provider() {
         eprintln!("REPRO_DB not set; skipping");
         return;
     };
-    let db = cora_cowork_db::init_database(std::path::Path::new(&path)).await.unwrap();
+    let db = cora_cowork_db::init_database(std::path::Path::new(&path))
+        .await
+        .unwrap();
     let services = AppServices::from_config(db, &AppConfig::default()).await.unwrap();
     let key = cora_cowork_app::derive_encryption_key(&services.jwt_secret_raw);
     eprintln!("[cur] secret prefix: {}", &services.jwt_secret_raw[..12]);

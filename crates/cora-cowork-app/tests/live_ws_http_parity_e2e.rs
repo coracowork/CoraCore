@@ -1132,7 +1132,8 @@ async fn run_direct_backend_team_mcp_and_runtime_env(backend: &str, agent_id: &s
     );
     assert!(
         shell_tool_evidence.contains("CORA_COWORK_HELPER_BIN")
-            && (shell_tool_evidence.contains("CORA_COWORK_E2E_SENTINEL") || shell_tool_evidence.contains("CORA_COWORK_ENV_OK")),
+            && (shell_tool_evidence.contains("CORA_COWORK_E2E_SENTINEL")
+                || shell_tool_evidence.contains("CORA_COWORK_ENV_OK")),
         "[{backend}] no streamed shell/command-execution evidence for the Team CLI fallback and sentinel check; \
          tool names={tool_names:?}"
     );

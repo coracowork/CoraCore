@@ -9,7 +9,12 @@ use common::{body_json, build_app, build_app_with_mock_agents, json_with_token, 
 const TEAM_ASSISTANT_ID: &str = "team-model-e2e-assistant";
 const TEAM_AGENT_ID: &str = "2d23ff1c";
 
-async fn create_team(app: &mut axum::Router, services: &cora_cowork_app::AppServices, token: &str, csrf: &str) -> Value {
+async fn create_team(
+    app: &mut axum::Router,
+    services: &cora_cowork_app::AppServices,
+    token: &str,
+    csrf: &str,
+) -> Value {
     let command = std::env::current_exe()
         .expect("test executable path")
         .to_string_lossy()

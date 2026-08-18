@@ -19,9 +19,13 @@ use cora_cowork_conversation::{
     runtime_state::ConversationRuntimeStateService,
     stream_relay::{RelayTerminal, StreamRelay},
 };
-use cora_cowork_db::{IConversationRepository, SqliteConversationRepository, init_database_memory, models::ConversationRow};
+use cora_cowork_db::{
+    IConversationRepository, SqliteConversationRepository, init_database_memory, models::ConversationRow,
+};
 use cora_cowork_realtime::BroadcastEventBus;
-use cora_cowork_session::{Admission, BackendError, Capabilities, Command, CommandReceipt, SessionBackend, SessionEnvelope};
+use cora_cowork_session::{
+    Admission, BackendError, Capabilities, Command, CommandReceipt, SessionBackend, SessionEnvelope,
+};
 use futures_util::stream::BoxStream;
 
 /// A `SessionBackend` whose turn NEVER terminates on its own (`events()` is a
