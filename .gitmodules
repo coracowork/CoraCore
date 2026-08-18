@@ -1,3 +1,0 @@
-[submodule ".github/workflows/corars"]
-	path = .github/workflows/corars
-	url = https://github.com/coracowork/corars.git
