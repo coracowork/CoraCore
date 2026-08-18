@@ -221,7 +221,10 @@ pub(crate) struct SpawnedTitleIo {
 }
 
 impl SpawnedTitleIo {
-    pub(crate) fn new(spawner: Arc<dyn cora_cowork_process::Spawner>, command: cora_cowork_common::CommandSpec) -> Self {
+    pub(crate) fn new(
+        spawner: Arc<dyn cora_cowork_process::Spawner>,
+        command: cora_cowork_common::CommandSpec,
+    ) -> Self {
         Self { spawner, command }
     }
 }

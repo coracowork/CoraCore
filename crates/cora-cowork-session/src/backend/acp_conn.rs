@@ -3060,7 +3060,10 @@ mod tests {
             "toolCall": { "title": "mcp__other__x", "rawInput": { "server_name": "cora-cowork-team-guide" } },
         });
         let meta = parse_permission_metadata(Some(&params)).expect("metadata present");
-        assert_eq!(meta["server_name"], "cora-cowork-team-guide", "rawInput.server_name wins");
+        assert_eq!(
+            meta["server_name"], "cora-cowork-team-guide",
+            "rawInput.server_name wins"
+        );
     }
 
     #[test]

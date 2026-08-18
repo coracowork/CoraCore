@@ -8077,8 +8077,11 @@ mod tests {
                 _spec: cora_cowork_common::CommandSpec,
                 _extra_env: &[(String, String)],
                 _opaque_owner_tag: &str,
-            ) -> Result<std::sync::Arc<cora_cowork_process::ManagedProcess>, cora_cowork_process::ProcessError> {
-                Err(cora_cowork_process::ProcessError::workspace_unavailable("/gone/workspace"))
+            ) -> Result<std::sync::Arc<cora_cowork_process::ManagedProcess>, cora_cowork_process::ProcessError>
+            {
+                Err(cora_cowork_process::ProcessError::workspace_unavailable(
+                    "/gone/workspace",
+                ))
             }
         }
 

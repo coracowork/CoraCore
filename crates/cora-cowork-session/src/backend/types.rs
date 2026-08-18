@@ -472,7 +472,10 @@ mod tests {
         );
         assert_eq!(err, BackendError::WorkspaceUnavailable("/gone/workspace".into()));
 
-        let err = BackendError::from_spawn("codex spawn failed", cora_cowork_process::ProcessError::internal("boom"));
+        let err = BackendError::from_spawn(
+            "codex spawn failed",
+            cora_cowork_process::ProcessError::internal("boom"),
+        );
         assert_eq!(
             err,
             BackendError::Transport("codex spawn failed: internal error: boom".into())

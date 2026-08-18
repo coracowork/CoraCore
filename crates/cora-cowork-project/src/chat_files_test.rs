@@ -49,7 +49,10 @@ async fn resolves_project_file_and_inlines_marker() {
     let abs = &out.files[0];
     assert!(std::path::Path::new(abs).is_file());
     assert!(abs.ends_with("note.txt"));
-    assert_eq!(out.content, format!("please review\n\n{CORA_COWORK_FILES_MARKER}\n{abs}"));
+    assert_eq!(
+        out.content,
+        format!("please review\n\n{CORA_COWORK_FILES_MARKER}\n{abs}")
+    );
 }
 
 #[tokio::test]

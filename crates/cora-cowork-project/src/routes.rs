@@ -18,17 +18,17 @@
 
 use std::sync::Arc;
 
+use axum::extract::rejection::JsonRejection;
+use axum::extract::{Json, Path, State};
+use axum::http::StatusCode;
+use axum::routing::{delete, get, post};
+use axum::{Extension, Router};
 use cora_cowork_api_types::{
     ApiResponse, AttachFolderRequest, ProjectDetailResponse, ProjectEntry, ProjectExplorer, ResolveRefRequest,
     ResolveRefResponse,
 };
 use cora_cowork_auth::CurrentUser;
 use cora_cowork_common::ApiError;
-use axum::extract::rejection::JsonRejection;
-use axum::extract::{Json, Path, State};
-use axum::http::StatusCode;
-use axum::routing::{delete, get, post};
-use axum::{Extension, Router};
 use serde_json::json;
 
 use crate::canonical;
