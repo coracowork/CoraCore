@@ -2038,11 +2038,20 @@ fn enrich_acp_error_message(raw: &str, stderr_tail: Option<&str>) -> String {
         return raw.to_string();
     }
     if let Some(tail) = stderr_tail
-        && let Some(cause) = cora_cowork_common::error_extract::extract_error_message(tail)
+        && let Some(cause) = extract_error_message(tail)
     {
         return format!("{raw} ({cause})");
     }
     raw.to_string()
+}
+
+// Adicione esta função auxiliar no mesmo arquivo ou em um módulo comum:
+fn extract_error_message(tail: &str) -> Option<String> {
+    // Pega a última linha não vazia do stderr
+    tail.lines()
+        .filter(|line| !line.trim().is_empty())
+        .last()
+        .map(|line| line.trim().to_string())
 }
 
 /// A JSON-RPC error message is "generic" (worth enriching from stderr) when it
