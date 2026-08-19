@@ -62,21 +62,21 @@ impl ManagedProcess {
     pub fn new() -> Self {
         Self { _private: () }
     }
-    
+
     pub async fn take_stdio(&self) -> Option<(BoxedStdin, BoxedStdout)> {
         // Placeholder implementation
         None
     }
-    
+
     pub async fn wait_for_exit(&self) -> Option<std::process::ExitStatus> {
         // Placeholder implementation
         None
     }
-    
+
     pub async fn peek_stderr_tail(&self, _max_lines: usize) -> String {
         String::new()
     }
-    
+
     pub async fn kill(&self, _grace: std::time::Duration) -> Result<(), ProcessError> {
         Ok(())
     }
