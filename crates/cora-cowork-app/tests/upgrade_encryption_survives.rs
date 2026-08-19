@@ -96,10 +96,7 @@ async fn upgrade_from_pre_user_scope_keeps_encryption_key() {
     let key = cora_cowork_app::derive_encryption_key(&services.jwt_secret_raw);
     let repo = Arc::new(SqliteProviderRepository::new(services.database.pool().clone()));
     let svc = cora_cowork_system::ProviderService::new(repo, key);
-    let list = svc
-        .list("system_default_user")
-        .await
-        .expect("provider list must not fail after upgrade");
+    let list = svc.list().await.expect("provider list must not fail after upgrade");
     let p = list
         .iter()
         .find(|p| p.id == "upgrade-prov-1")

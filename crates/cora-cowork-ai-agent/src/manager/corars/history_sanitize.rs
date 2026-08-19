@@ -123,10 +123,8 @@ fn is_orphaned_assistant_tool_call(msg: &Message, answered: &HashSet<String>) ->
                     has_unanswered = true;
                 }
             }
-            ContentBlock::Text { text } => {
-                if !text.trim().is_empty() {
-                    has_text = true;
-                }
+            ContentBlock::Text { text } if !text.trim().is_empty() => {
+                has_text = true;
             }
             // Ignore Thinking, ToolResult, Image, ProviderItem, etc.
             _ => {}
