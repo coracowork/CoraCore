@@ -8,80 +8,14 @@
 
 use std::sync::Arc;
 
+use cora_cowork_process::{BoxedStdin, BoxedStdout, ManagedProcess, ProcessError, Spawner};
+
 use crate::capability::Capabilities;
 use crate::event::{ExitStatusLite, SessionEvent};
 
 mod claude;
 pub(crate) use claude::claude_permission_modes;
 pub use claude::{ClaudeAdapter, is_valid_claude_permission_mode};
-
-// ===== TIPOS DEFINIDOS LOCALMENTE =====
-/// Boxed stdin for process I/O
-pub type BoxedStdin = Box<dyn tokio::io::AsyncWrite + Unpin + Send>;
-/// Boxed stdout for process I/O
-pub type BoxedStdout = Box<dyn tokio::io::AsyncRead + Unpin + Send>;
-
-/// Spawner trait for creating processes
-pub trait Spawner: Send + Sync {
-    fn spawn(&self, cmd: &mut tokio::process::Command) -> Result<Arc<ManagedProcess>, ProcessError>;
-}
-
-/// Process error type
-#[derive(Debug, thiserror::Error)]
-pub enum ProcessError {
-    #[error("I/O error: {0}")]
-    Io(#[from] std::io::Error),
-    #[error("spawn failed: {0}")]
-    Spawn(String),
-    #[error("internal error: {0}")]
-    Internal(String),
-    #[error("workspace unavailable: {0}")]
-    WorkspaceUnavailable(String),
-}
-
-impl ProcessError {
-    pub fn workspace_unavailable(path: impl Into<String>) -> Self {
-        Self::WorkspaceUnavailable(path.into())
-    }
-    pub fn internal(msg: impl Into<String>) -> Self {
-        Self::Internal(msg.into())
-    }
-    pub fn spawn(msg: impl Into<String>) -> Self {
-        Self::Spawn(msg.into())
-    }
-}
-
-/// Managed process wrapper
-pub struct ManagedProcess {
-    // This would contain the actual process handle
-    // For now, just a placeholder
-    _private: (),
-}
-
-impl ManagedProcess {
-    pub fn new() -> Self {
-        Self { _private: () }
-    }
-
-    pub async fn take_stdio(&self) -> Option<(BoxedStdin, BoxedStdout)> {
-        // Placeholder implementation
-        None
-    }
-
-    pub async fn wait_for_exit(&self) -> Option<std::process::ExitStatus> {
-        // Placeholder implementation
-        None
-    }
-
-    pub async fn peek_stderr_tail(&self, _max_lines: usize) -> String {
-        String::new()
-    }
-
-    pub async fn kill(&self, _grace: std::time::Duration) -> Result<(), ProcessError> {
-        Ok(())
-    }
-}
-// ===== FIM DOS TIPOS DEFINIDOS LOCALMENTE =====
 
 /// How a persistent session process should be started (feature 004 R16/D12/S17).
 /// Backend-agnostic: the adapter translates it into backend flags (claude:
@@ -146,24 +80,16 @@ pub trait AgentIo: Send + Sync {
 /// last few; a small window keeps the redaction cheap and bounds exposure.
 pub(crate) const STDERR_PEEK_LINES: usize = 32;
 
-/// Extract error message from stderr tail (local implementation)
-fn extract_error_message(tail: &str) -> Option<String> {
-    tail.lines()
-        .filter(|line| !line.trim().is_empty())
-        .last()
-        .map(|line| line.trim().to_string())
-}
-
 /// G2: capture a redacted, allowlisted one-line summary of a backend process's
 /// stderr tail for the terminal `Detached` event. Shared by every backend's
 /// reader task (and the `run_turn` core) so redaction happens in exactly one
 /// place — raw/untrusted stderr never crosses the backend boundary. Returns
-/// `None` when nothing matches the `error_extract` allowlist
+/// `None` when nothing matches the `cora_cowork_common::error_extract` allowlist
 /// (caller keeps a bare exit description). Call only on a REAL exit/EOF (where
 /// stderr has had a chance to fill); the startup double-take guards pass `None`.
 pub(crate) async fn redact_exit_stderr(io: &dyn AgentIo) -> Option<String> {
     let tail = io.peek_stderr(STDERR_PEEK_LINES).await;
-    extract_error_message(&tail)
+    cora_cowork_common::error_extract::extract_error_message(&tail)
 }
 
 /// Thin `AgentIo` over an `Arc<ManagedProcess>` (the real 001 handle). Converts

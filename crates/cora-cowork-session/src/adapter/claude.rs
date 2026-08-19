@@ -7,12 +7,11 @@
 //! the canonical `SessionEvent` into the reducer.
 
 use cora_cowork_common::CommandSpec;
+use cora_cowork_process::{BoxedStdin, ProcessError, Spawner};
 use serde_json::{Value, json};
 use tokio::io::AsyncWriteExt;
 
-use super::{
-    AgentIo, BackendAdapter, BoxedStdin, ManagedProcess, ManagedProcessIo, ProcessError, SessionSpec, Spawner,
-};
+use super::{AgentIo, BackendAdapter, ManagedProcessIo, SessionSpec};
 use crate::capability::{Capabilities, CapabilityTier, ModeInfo, SignalSet};
 use crate::event::SessionEvent;
 
@@ -1035,6 +1034,14 @@ impl BackendAdapter for ClaudeAdapter {
             // later result TurnResult is absorbed by the reducer's I10.
             "--include-partial-messages".to_string(),
             "--replay-user-messages".to_string(),
+            // NOTE: `--thinking-display summarized` (ask for PLAINTEXT thinking —
+            // current models default the display to `omitted` and then stream
+            // signature-only thinking blocks) is NOT built here. It is version-gated
+            // and therefore supplied by the manager through `extra_args`
+            // (cora-cowork-ai-agent `claude_flags`): the CLI rejects an unknown option at
+            // parse time, so passing it to an older PATH-resolved claude would kill
+            // the spawn outright. This crate is self-contained (cora-cowork-process +
+            // cora-cowork-common only) and cannot probe `--version` itself.
             // Feature 004 F3: enable the bidirectional control channel. With
             // `--permission-prompt-tool stdio`, claude emits a `control_request`
             // (subtype `can_use_tool`) on stdout and BLOCKS until the host writes
@@ -1073,20 +1080,26 @@ impl BackendAdapter for ClaudeAdapter {
         // them, only appends them.
         args.extend(extra_args.iter().cloned());
 
-        // Create a CommandSpec using the local types
         let spec = CommandSpec {
+            // Orchestration-resolved bundled CLI (packaged app) or bare "claude"
+            // (dev → PATH). See SessionConfig.cli_program.
             command: cli_program.map(|p| p.to_path_buf()).unwrap_or_else(|| "claude".into()),
             args,
+            // #103: provider env injected by the orchestration layer (e.g. cc-switch
+            // ANTHROPIC_BASE_URL/AUTH_TOKEN for backend == "claude"). Empty =
+            // inherit parent env only (pre-#103 byte-identical). The adapter only
+            // forwards it — it never reads cc-switch.
             env: env.to_vec(),
+            // The conversation workspace: claude runs (and its file tools
+            // operate) here, AND claude keys its on-disk session by cwd — so a
+            // later `--resume` only finds the session when respawned with the
+            // SAME cwd. Threading the workspace here is what makes cross-process
+            // resume (idle-reap / backend-restart respawn) actually work.
             cwd: cwd.map(str::to_owned),
         };
-
-        // Use the spawner from the trait
-        let proc = spawner
-            .spawn(spec, &[], "cora-cowork-session")
-            .await
-            .map_err(|e| ProcessError::Spawn(e.to_string()))?;
-
+        // S14: spawn via the INJECTED spawner (never raw-spawn). opaque_owner_tag
+        // is passed through verbatim; P0 uses a static tag.
+        let proc = spawner.spawn(spec, &[], "cora-cowork-session").await?;
         Ok(Box::new(ManagedProcessIo::new(proc)))
     }
 
@@ -1111,6 +1124,7 @@ impl BackendAdapter for ClaudeAdapter {
                 // Native base64 image block — the ONLY inline non-text modality
                 // headless claude accepts. The `source` wrapper is REQUIRED; a flat
                 // {type:image,data,...} is rejected (error_during_execution).
+                // Pinned: protocols/samples/claude-cli/2.1.177/image_input_frame.OK.json
                 ContentBlock::Image { data, media_type } => {
                     let b64 = base64::engine::general_purpose::STANDARD.encode(data);
                     Some(json!({
@@ -1171,8 +1185,28 @@ impl BackendAdapter for ClaudeAdapter {
 
     fn capabilities(&self) -> Capabilities {
         // claude is fully parsed and emits all three signals.
+        // 007 §C6: the legacy ClaudeAdapter declares the DISCOVERY fields too.
+        // claude headless (stream-json control plane) supports answer_permission
+        // (control_response) but rewind is NOT WIRED YET — deferred, not impossible.
+        // (Correction, gap-reaudit: the prior "§9.9 measured: /rewind not on the
+        // control plane" was WRONG — 2.1.191 binary HAS rewind_files/rewind_conversation
+        // control arms; a probe returns {canRewind, error}.) The protocol EXISTS; we
+        // just haven't built the client side: it needs a num_turns→user_message_id
+        // history map (the wire rewinds by message id, not turn count) + checkpoint
+        // infra (CLAUDE_CODE_ENABLE_SDK_FILE_CHECKPOINTING), and a live success path we
+        // can't verify without a checkpoint-enabled session. So cap is false FOR NOW;
+        // this is a known, reachable follow-up, not a permanent exclusion — wire it
+        // when rewind UX is wanted (probe shapes captured: protocols/samples/claude-cli/
+        // 2.1.187/_all_rewind_{off,on}.jsonl). NOT answer_auth (auth failures terminate
+        // the turn, no mid-session re-auth on the local path). models/modes are
+        // CLI-static (filled by ClaudeConnection).
         Capabilities {
             tier: CapabilityTier::Parsed,
+            // Static default only. The live backend OVERRIDES this per call, because
+            // claude's answer depends on what it is doing: a `set_permission_mode` written
+            // while idle takes effect at once (verified:
+            // samples/claude-cli/2.1.227/set_permission_mode/), but one raised mid-turn is
+            // queued by `write_or_queue_control` and drained before the NEXT prompt.
             mode_switch_effect: crate::capability::ModeSwitchEffect::Immediate,
             emits: SignalSet {
                 heartbeat: true,
@@ -1180,33 +1214,76 @@ impl BackendAdapter for ClaudeAdapter {
                 terminal_result: true,
             },
             supported_commands: crate::capability::CommandSet {
+                // B5: mid-turn delivery routes Command::Steer to a direct stdin
+                // user-frame write (claude's persistent stdin accepts writes any
+                // time; the CLI queues and consumes them itself — command_lifecycle
+                // echoes our uuid, design spec §6.1/§6甲.2). No turn_gen bump, no
+                // FSM involvement (NoTurn admission).
                 steer: true,
                 cancel_tool: false,
                 answer_permission: true,
                 answer_auth: false,
                 acknowledge: true,
+                // G2: set_mode/set_model = true — the 007 claude seam now wires the
+                // in-band control_request{set_permission_mode|set_model} over the
+                // retained stdin (probe-verified, mirrors F1), queuing a mid-turn
+                // switch to the next prompt and emitting ConfigChanged on dispatch.
+                // cap=true ↔ dispatch accepts (the cap-behavior invariant holds).
                 set_mode: true,
                 set_model: true,
-                rewind: false,
+                rewind: false, // not wired YET (protocol EXISTS in 2.1.191; deferred follow-up, see note above)
                 list_checkpoints: false,
+                // claude exposes control_request{get_context_usage}+{get_session_cost}
+                // (live-confirmed 2.1.186) → QuerySessionInfo dispatch over the same
+                // in-band control plane, sniffed back as SessionEvent::SessionInfo.
                 query_session_info: true,
             },
             prompt_blocks: crate::capability::BlockSet {
                 text: true,
+                // image = true: deliver_prompt emits a native base64 image block
+                // ({type:image, source:{type:base64,...}}) the model truly sees
+                // (pinned: protocols/samples/claude-cli/2.1.177/image_input_frame.OK.json).
                 image: true,
                 audio: false,
+                // resource = true: a ResourceLink is delivered by reference as a
+                // `[Attached file: <uri>]` text element for claude's Read tool
+                // (headless claude has no working document INPUT block; the file
+                // must be reachable from the spawn cwd / an --add-dir root).
                 resource: true,
                 at_mention: false,
             },
+            // Native: claude echoes our user-frame `uuid` in the
+            // `--replay-user-messages` frame ONLY when it truly consumes the message
+            // into a turn — that echo is a REAL prompt-ack (the ClaudeConnection
+            // reader's sniff_replay_prompt_ack emits PromptAccepted on it). Was
+            // Synthesized (flush-ok), which lied for a proactively-queued message that
+            // claude had not yet drained (or dropped on cancel). See protocols/design/
+            // claude-midturn-input-turn-gen-design.md §3.3/§4-B.
             prompt_accepted: crate::capability::PromptAcceptedSource::Native,
             available_models: Vec::new(),
+            // claude's permission modes are a FIXED known enum (NOT discovered, unlike
+            // models/effort which come from the initialize response): the exact values
+            // `--permission-mode` / control_request{set_permission_mode} accept. Static
+            // here so `config_options_from_caps` projects a `mode` option (it gates on
+            // `!available_modes.is_empty()`); without this the mode picker had no data
+            // even though the write path (SetMode) was fully wired.
             available_modes: claude_permission_modes(),
             current_model: None,
             current_mode: None,
             current_effort: None,
-            auth_methods: Vec::new(),
+            auth_methods: Vec::new(), // no mid-session re-auth on local path
+            // 009 R2: claude's persistent stdin is a FIFO — a write while a turn
+            // is in flight is buffered and consumed as the next turn, so the conv
+            // layer CAN proactively queue. This (NOT supported_commands.steer)
+            // is what can_queue gates on.
             accepts_proactive_input: true,
+            // Verified backend matrix (see `Capabilities::supports_midturn_delivery`):
+            // claude is a direct-CLI backend that can deliver a mid-turn message to
+            // the agent without waiting for the current turn to end.
             supports_midturn_delivery: true,
+            // #101: static default empty; the clean-slate ClaudeConnection fills it
+            // from the control_request{initialize} response (the legacy adapter has
+            // no discovery wire). capabilities() merges the discovered set on read.
             slash_commands: Vec::new(),
         }
     }

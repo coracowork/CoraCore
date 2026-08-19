@@ -53,6 +53,7 @@ pub enum AgentStreamEvent {
     System(serde_json::Value),
     RequestTrace(serde_json::Value),
     SessionAssigned(SessionAssignedEventData),
+    BackendTurnBound(String),
 }
 
 /// Data for the `Start` event.

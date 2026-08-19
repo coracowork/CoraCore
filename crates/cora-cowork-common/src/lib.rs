@@ -3,16 +3,19 @@
 //! Shared primitives: error types, enums, ID generation, crypto, timestamps, and pagination.
 pub mod constants;
 
+mod backend_capabilities;
 mod case_convert;
 mod crypto;
 mod enums;
 mod error;
+pub mod error_extract;
 mod hooks;
 mod id;
 mod pagination;
 mod timestamp;
 mod types;
 
+pub use backend_capabilities::{CapabilityOrigin, McpTransportCapabilities, ResolvedBackendCapabilities};
 pub use case_convert::{camel_to_snake, normalize_keys_to_snake_case};
 pub use crypto::{CryptoError, decrypt_string, encrypt_string};
 pub use enums::{

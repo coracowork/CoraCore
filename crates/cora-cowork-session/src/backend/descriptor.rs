@@ -3,31 +3,9 @@
 //! Direct CLI adapters cannot obtain an ACP initialize snapshot, so their MCP
 //! capability comes from the adapter contract that performs the injection.
 
+use cora_cowork_common::{CapabilityOrigin, McpTransportCapabilities, ResolvedBackendCapabilities};
+
 use super::cli_version::{VERIFIED_AGY_VERSION, VERIFIED_CLAUDE_VERSION, VERIFIED_CODEX_VERSION};
-
-// ===== TIPOS DEFINIDOS LOCALMENTE =====
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum CapabilityOrigin {
-    DirectDescriptor,
-    InternalDescriptor,
-    Workspace,
-    User,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct McpTransportCapabilities {
-    pub stdio: bool,
-    pub sse: bool,
-    pub streamable_http: bool,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct ResolvedBackendCapabilities {
-    pub mcp: McpTransportCapabilities,
-    pub cli_fallback: bool,
-    pub origin: CapabilityOrigin,
-}
-// ===== FIM DOS TIPOS DEFINIDOS LOCALMENTE =====
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PromptCapabilities {
@@ -63,6 +41,8 @@ impl BackendCapabilityDescriptor {
 }
 
 const BACKEND_CAPABILITY_DESCRIPTORS: &[BackendCapabilityDescriptor] = &[
+    // verified: ~/.npm/_npx/ca6c9a6e3c4cc822/node_modules/
+    // @agentclientprotocol/claude-agent-acp/dist/acp-agent.js:1872-1898
     BackendCapabilityDescriptor {
         backend_id: "claude",
         mcp: McpTransportCapabilities {
@@ -79,6 +59,8 @@ const BACKEND_CAPABILITY_DESCRIPTORS: &[BackendCapabilityDescriptor] = &[
         }),
         fork: Some(ForkCapabilities { at_turn: false }),
     },
+    // verified: `codex mcp add --help` declares command-based stdio and
+    // `--url` streamable HTTP, and does not declare SSE.
     BackendCapabilityDescriptor {
         backend_id: "codex",
         mcp: McpTransportCapabilities {
@@ -95,6 +77,8 @@ const BACKEND_CAPABILITY_DESCRIPTORS: &[BackendCapabilityDescriptor] = &[
         }),
         fork: Some(ForkCapabilities { at_turn: true }),
     },
+    // verified: ~/.gemini/antigravity-cli/builtin/skills/
+    // agy-customizations/docs/mcp_servers.md
     BackendCapabilityDescriptor {
         backend_id: "antigravity",
         mcp: McpTransportCapabilities {
@@ -123,10 +107,14 @@ const BACKEND_CAPABILITY_DESCRIPTORS: &[BackendCapabilityDescriptor] = &[
     },
 ];
 
+/// Enumerate every backend whose capabilities are constructed in-process.
+/// Contract tests consume this registry so a new entry automatically exercises
+/// lookup, projection, and Team resolver behavior.
 pub fn backend_capability_descriptors() -> &'static [BackendCapabilityDescriptor] {
     BACKEND_CAPABILITY_DESCRIPTORS
 }
 
+/// Return a descriptor only when the backend has constructed capability data.
 pub fn backend_capability_descriptor(backend: &str) -> Option<BackendCapabilityDescriptor> {
     BACKEND_CAPABILITY_DESCRIPTORS
         .iter()
@@ -134,6 +122,8 @@ pub fn backend_capability_descriptor(backend: &str) -> Option<BackendCapabilityD
         .copied()
 }
 
+/// Overlay constructed fields onto persisted discovery data. Constructed false
+/// values are authoritative, so stale ACP history cannot re-enable a transport.
 pub fn effective_agent_capabilities(backend: &str, persisted: Option<&serde_json::Value>) -> Option<serde_json::Value> {
     let Some(descriptor) = backend_capability_descriptor(backend) else {
         return persisted.cloned();
