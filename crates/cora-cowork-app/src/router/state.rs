@@ -30,11 +30,11 @@ use cora_cowork_extension::{
 };
 use cora_cowork_file::{BrowseRoots, FileRouterState, FileService, FileWatchService, SnapshotService};
 use cora_cowork_mcp::{
-    ClaudeAdapter, CodeBuddyAdapter, CodexAdapter, CoracoworkAdapter, CorarsAdapter, GeminiAdapter, McpAgentAdapter,
+    ClaudeAdapter, CodeBuddyAdapter, CodexAdapter, CoraCoworkAdapter, CorarsAdapter, GeminiAdapter, McpAgentAdapter,
     McpConfigService, McpConnectionTestService, McpRouterState, McpSyncService, OpencodeAdapter, QwenAdapter,
 };
 use cora_cowork_office::{
-    ConversionService, OfficeRouterState, OfficecliWatchManager, ProxyService, SnapshotService as OfficeSnapshotService,
+    ConversionService, CorecliWatchManager, OfficeRouterState, ProxyService, SnapshotService as OfficeSnapshotService,
 };
 use cora_cowork_realtime::{NoopMessageRouter, WsHandlerState};
 use cora_cowork_shell::ShellRouterState;
@@ -470,7 +470,7 @@ pub fn build_mcp_state(services: &AppServices) -> McpRouterState {
         Arc::new(CodeBuddyAdapter),
         Arc::new(OpencodeAdapter),
         Arc::new(CorarsAdapter),
-        Arc::new(CoracoworkAdapter::new(repo.clone())),
+        Arc::new(CoraCoworkAdapter::new(repo.clone())),
     ];
 
     let oauth_token_repo: Arc<dyn cora_cowork_db::IOAuthTokenRepository> = Arc::new(
@@ -778,7 +778,7 @@ pub fn build_office_state(services: &AppServices) -> OfficeRouterState {
 
     let spawner: Arc<dyn cora_cowork_office::ProcessSpawner> =
         Arc::new(cora_cowork_office::DefaultProcessSpawner::new(data_dir.to_path_buf()));
-    let watch_manager = Arc::new(OfficecliWatchManager::new(spawner, services.event_bus.clone()));
+    let watch_manager = Arc::new(CorecliWatchManager::new(spawner, services.event_bus.clone()));
 
     let snapshot_service = Arc::new(OfficeSnapshotService::new(data_dir));
     let conversion_service = Arc::new(ConversionService::with_data_dir(None, data_dir.to_path_buf()));

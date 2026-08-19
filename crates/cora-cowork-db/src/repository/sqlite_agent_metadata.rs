@@ -357,15 +357,16 @@ impl IAgentMetadataRepository for SqliteAgentMetadataRepository {
 
         sqlx::query(
             "INSERT INTO agent_metadata \
-                (id, icon, name, name_i18n, description, description_i18n, \
+                (id, agent_id, icon, name, name_i18n, description, description_i18n, \
                  backend, agent_type, agent_source, agent_source_info, \
                  enabled, command, args, env, native_skills_dirs, \
                  behavior_policy, yolo_id, \
                  agent_capabilities, auth_methods, config_options, \
                  available_modes, available_models, available_commands, \
                  sort_order, created_at, updated_at) \
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) \
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) \
              ON CONFLICT(id) DO UPDATE SET \
+                agent_id = excluded.agent_id, \
                 icon = excluded.icon, \
                 name = excluded.name, \
                 name_i18n = excluded.name_i18n, \
@@ -391,6 +392,7 @@ impl IAgentMetadataRepository for SqliteAgentMetadataRepository {
                 sort_order = excluded.sort_order, \
                 updated_at = excluded.updated_at",
         )
+        .bind(params.id)
         .bind(params.id)
         .bind(params.icon)
         .bind(params.name)

@@ -696,7 +696,7 @@ impl ConversationService {
     ) -> Result<ConversationResponse, ConversationError> {
         let id = generate_short_id();
         let now = now_ms();
-        let source = req.source.unwrap_or(ConversationSource::Coracowork);
+        let source = req.source.unwrap_or(ConversationSource::CoraCowork);
 
         let mut extra = req.extra;
 

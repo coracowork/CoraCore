@@ -1326,7 +1326,7 @@ mod tests {
         // when none of the CLIs are installed on the test host.
         let reg = registry().await;
         let all = reg.list_all_including_hidden().await;
-        assert_eq!(all.len(), 40);
+        assert_eq!(all.len(), 42);
     }
 
     #[tokio::test]
@@ -1376,7 +1376,10 @@ mod tests {
         assert_eq!(pi.agent_source_info.binary_name.as_deref(), Some("pi"));
         assert_eq!(pi.agent_source_info.bridge_binary.as_deref(), Some("npx"));
         assert_eq!(pi.native_skills_dirs.as_deref(), Some(&[".pi/skills".to_owned()][..]));
-        assert!(!pi.team_capable);
+        // Migration 033 removed the hard `team_capable_override: false` veto;
+        // pi is now team-capable by handshake inference (it advertises
+        // `load_session` and session capabilities, no shell/cli false flags).
+        assert!(pi.team_capable);
         assert_eq!(pi.yolo_id, None);
         assert_eq!(
             pi.handshake
@@ -1402,7 +1405,7 @@ mod tests {
                 .unwrap_or_else(|error| panic!("missing release lock for {backend}: {error}"));
             locked += 1;
         }
-        assert_eq!(locked, 11);
+        assert_eq!(locked, 12);
     }
 
     /// On a host that has *none* of the seeded CLIs installed, the
@@ -1437,7 +1440,7 @@ mod tests {
         let reg = registry().await;
         let all = reg.list_all_including_hidden().await;
         let count = |t: AgentType| all.iter().filter(|m| m.agent_type == t).count();
-        assert_eq!(count(AgentType::Acp), 37);
+        assert_eq!(count(AgentType::Acp), 39);
         assert_eq!(count(AgentType::Nanobot), 1);
         assert_eq!(count(AgentType::OpenclawGateway), 1);
         assert_eq!(count(AgentType::Corars), 1);
@@ -1547,7 +1550,7 @@ mod tests {
     async fn diagnostic_snapshot_pairs_rows_with_reasons() {
         let reg = registry().await;
         let snapshot = reg.diagnostic_snapshot().await;
-        assert_eq!(snapshot.len(), 40, "every row appears once");
+        assert_eq!(snapshot.len(), 42, "every row appears once");
 
         for (meta, reason) in &snapshot {
             match (meta.available, reason) {

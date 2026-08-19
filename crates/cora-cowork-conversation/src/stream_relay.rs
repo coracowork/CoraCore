@@ -598,6 +598,7 @@ impl StreamRelay {
             AgentStreamEvent::System(_) => "System",
             AgentStreamEvent::RequestTrace(_) => "RequestTrace",
             AgentStreamEvent::SessionAssigned(_) => "SessionAssigned",
+            AgentStreamEvent::BackendTurnBound(_) => "BackendTurnBound",
         }
     }
 
