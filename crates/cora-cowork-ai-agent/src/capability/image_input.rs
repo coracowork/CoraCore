@@ -3,15 +3,10 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::OnceLock;
 
+use cora_types::message::ImageInputCapability;
 use http::Uri;
 use serde::Deserialize;
 use tracing::error;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum ImageInputCapability {
-    Supported,
-    Unknown,
-}
 
 const IMAGE_INPUT_CATALOG_SCHEMA_VERSION: u32 = 1;
 const IMAGE_INPUT_CATALOG_JSON: &str = include_str!("../../assets/model-capabilities/image_input_models.json");
